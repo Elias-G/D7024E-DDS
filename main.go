@@ -1,4 +1,4 @@
-package Main
+package main
 
 import (
 	"./src"
@@ -11,7 +11,7 @@ func main() {
 	var node2 = createNode(5000, "10.0.0.4")
 
 	node1.CalcDistance(node2.ID)
-	print("1")
+	print(node1.String())
 
 }
 
