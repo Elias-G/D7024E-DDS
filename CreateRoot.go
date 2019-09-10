@@ -8,32 +8,33 @@ import (
 	"strconv"
 )
 
-var k = 20
+var k2 = 20
 
 func main() {
-	var ip = getIpAddress()
-
-	var rootNode = createNode(5000, "10.0.0.7")
-
-	var me = createNode(5000, ip)
-	table := src.NewRoutingTable(me)
+	var ip = getIpAddress2()
+	var me = createNode2(5000, ip)
+	var table = src.NewRoutingTable(me)
 
 	var kademlia = &src.Kademlia{
 		Table: *table,
 		Me:    me,
-		K:     k,
+		K:     k2,
 		Alpha: 1,
 	}
-	networkJoin(me, rootNode, *table)
 
 	print(kademlia)
 
-	var net = src.Network{}
-
-	net.SendPingMessage(&rootNode)
+	src.Listen(me.Address)
 }
 
-func getIpAddress() string {
+func createNode2(port int, ip string) src.Contact {
+	id := src.NewRandomKademliaID()
+	address := ip + ":" + strconv.Itoa(port)
+	me := src.NewContact(id, address)
+	return me
+}
+
+func getIpAddress2() string {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		log.Fatal("interface error", err)
@@ -60,16 +61,4 @@ func getIpAddress() string {
 	}
 
 	return ""
-}
-
-func createNode(port int, ip string) src.Contact {
-	id := src.NewRandomKademliaID()
-	address := ip + ":" + strconv.Itoa(port)
-	me := src.NewContact(id, address)
-	return me
-}
-
-func networkJoin(me src.Contact, rootNode src.Contact, table src.RoutingTable) {
-	table.AddContact(rootNode)
-	table.FindClosestContacts(me.ID, k)
 }

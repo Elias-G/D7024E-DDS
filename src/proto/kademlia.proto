@@ -3,8 +3,8 @@ syntax = "proto3";
 service Kademlia {
   rpc Ping (PingRequest) returns (PingResponse);
   rpc Store (StoreRequest) returns (StoreResponse);
-  rpc FindNode (FindNodeRequest) returns (FindNodeResponse);
-  rpc FindValue (FindNodeRequest) returns (FindValueResponse);
+  //rpc FindNode (FindNodeRequest) returns (FindNodeResponse);
+  //rpc FindValue (FindNodeRequest) returns (FindValueResponse);
 }
 
 message PingRequest {
@@ -25,15 +25,15 @@ message StoreResponse {
     string hash = 1;
 }
 
-message FindNodeRequest {
-    string sender = 1;
-    int32  nodeId = 2;
-}
+//message FindNodeRequest {
+    //string sender = 1;
+    //int32  nodeId = 2;
+//}
 
-message FindNodeResponse {
+//message FindNodeResponse {
     //Contact contact = 1; ??
-}
+//}
 
-message FindValueResponse {
+//message FindValueResponse {
     //???
-}
+//}

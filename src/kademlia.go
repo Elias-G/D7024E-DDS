@@ -1,6 +1,10 @@
 package src
 
 type Kademlia struct {
+	Table RoutingTable
+	Me    Contact
+	K     int
+	Alpha int
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {

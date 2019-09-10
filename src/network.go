@@ -2,16 +2,16 @@ package src
 
 import (
 	"fmt"
+	"log"
 	"net"
-	"strconv"
 )
 
 type Network struct {
 }
 
-func Listen(ip string, port int) {
+func Listen(address string) {
 	// TODO
-	ln, err := net.Listen("tcp", ip+":"+strconv.Itoa(port))
+	ln, err := net.Listen("tcp", address)
 	if err != nil {
 		panic(err)
 	}
@@ -40,7 +40,33 @@ func (network *Network) SendPingMessage(contact *Contact) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Fprintf(conn, "PING!")
+	_, err = fmt.Fprintf(conn, "PING!")
+
+	if err != nil {
+		log.Fatal("FPrintf error", err)
+	}
+
+	//Example of marshaling and unmarshaling
+	/*ping := &kademlia.PingRequest{
+		Sender: "10.0.0.3", //my address??
+		Destination: contact.Address,
+	}
+	data, err := proto.Marshal(ping)
+
+	if err != nil{
+		log.Fatal("Marshaling error", err)
+	}
+
+	newPing := &kademlia.PingRequest{}
+
+	err = proto.Unmarshal(data, newPing)
+
+	if err != nil{
+		log.Fatal("Unmarshaling error", err)
+	}
+
+	newPing.GetDestination()
+	newPing.GetSender()*/
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact) {
