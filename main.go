@@ -13,7 +13,7 @@ var k = 20
 func main() {
 	var ip = getIpAddress()
 
-	var rootNode = createNode(5000, "10.0.0.7")
+	var rootNode = createNode(5000, "10.0.0.3")
 
 	var me = createNode(5000, ip)
 	table := src.NewRoutingTable(me)
@@ -30,7 +30,7 @@ func main() {
 
 	var net = src.Network{}
 
-	net.SendPingMessage(&rootNode)
+	net.SendPingMessage(&rootNode, *kademlia)
 }
 
 func getIpAddress() string {
