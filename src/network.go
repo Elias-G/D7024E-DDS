@@ -1,7 +1,11 @@
 package src
 
 import (
+	"./proto"
+	"encoding/binary"
 	"fmt"
+	"github.com/golang/protobuf/proto"
+	"io"
 	"log"
 	"net"
 )
@@ -25,25 +29,44 @@ func Listen(address string) {
 }
 
 func handleConnection(conn net.Conn) {
-	data := make([]byte, 512)
-	n, err := conn.Read(data)
+	buf := make([]byte, 4096)
+	_, err := io.ReadFull(conn, buf)
 	if err != nil {
 		panic(err)
 	}
-	s := string(data[:n])
-	print(s)
+	fmt.Print(" Buf: ")
+	fmt.Print(buf)
+	fmt.Print(" end ")
+	newPing := &kademlia.PingRequest{}
+
+	err = proto.Unmarshal(buf, newPing)
+
+	if err != nil {
+		log.Fatal("Unmarshalling error ", err)
+	}
+	fmt.Printf("Sender: " + newPing.GetSender() + " Destination: " + newPing.GetDestination() + "\\n")
 }
 
-func (network *Network) SendPingMessage(contact *Contact) {
+func (network *Network) SendPingMessage(contact *Contact, kademliaObj Kademlia) {
 	// TODO
 	conn, err := net.Dial("tcp", contact.Address)
 	if err != nil {
 		panic(err)
 	}
-	_, err = fmt.Fprintf(conn, "PING!")
+
+	ping := &kademlia.PingRequest{
+		Sender:      kademliaObj.Me.Address,
+		Destination: contact.Address,
+	}
+
+	dataToSend, err := proto.Marshal(ping)
+	fmt.Print(" data: ")
+	fmt.Print(dataToSend)
+	fmt.Print(" end ")
+	_, err = fmt.Print(conn, dataToSend)
 
 	if err != nil {
-		log.Fatal("FPrintf error", err)
+		log.Fatal("Print error", err)
 	}
 
 	//Example of marshaling and unmarshaling

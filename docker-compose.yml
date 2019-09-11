@@ -1,16 +1,17 @@
 version: "3"
+
 services:
 #  rootNode:
 #    image: rootnode:latest
 #    stdin_open: true
-#      tty: true
-#      deploy:
-#        restart_policy:
-#          condition: on-failure
-#      ports:
-#        - "5000:5000"
-#      networks:
-#        - kademlia_network
+#    tty: true
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#    ports:
+#      - "5000:5000"
+#    networks:
+#      - kademlia_network
   kademliaNodes:
     image: test:latest
     stdin_open: true
@@ -27,6 +28,6 @@ services:
       - "5000:5000"
     networks:
       - kademlia_network
-      
+
 networks:
   kademlia_network:
