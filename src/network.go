@@ -2,10 +2,8 @@ package src
 
 import (
 	"./proto"
-	"encoding/binary"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"io"
 	"log"
 	"net"
 )
@@ -30,21 +28,12 @@ func Listen(address string) {
 
 func handleConnection(conn net.Conn) {
 	buf := make([]byte, 4096)
-	_, err := io.ReadFull(conn, buf)
+	n, err := conn.Read(buf)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Print(" Buf: ")
-	fmt.Print(buf)
-	fmt.Print(" end ")
-	newPing := &kademlia.PingRequest{}
 
-	err = proto.Unmarshal(buf, newPing)
-
-	if err != nil {
-		log.Fatal("Unmarshalling error ", err)
-	}
-	fmt.Printf("Sender: " + newPing.GetSender() + " Destination: " + newPing.GetDestination() + "\\n")
+	readPingMessage(buf[:n])
 }
 
 func (network *Network) SendPingMessage(contact *Contact, kademliaObj Kademlia) {
@@ -63,33 +52,11 @@ func (network *Network) SendPingMessage(contact *Contact, kademliaObj Kademlia) 
 	fmt.Print(" data: ")
 	fmt.Print(dataToSend)
 	fmt.Print(" end ")
-	_, err = fmt.Print(conn, dataToSend)
 
+	_, err = conn.Write(dataToSend)
 	if err != nil {
-		log.Fatal("Print error", err)
+		log.Fatal("Write error", err)
 	}
-
-	//Example of marshaling and unmarshaling
-	/*ping := &kademlia.PingRequest{
-		Sender: "10.0.0.3", //my address??
-		Destination: contact.Address,
-	}
-	data, err := proto.Marshal(ping)
-
-	if err != nil{
-		log.Fatal("Marshaling error", err)
-	}
-
-	newPing := &kademlia.PingRequest{}
-
-	err = proto.Unmarshal(data, newPing)
-
-	if err != nil{
-		log.Fatal("Unmarshaling error", err)
-	}
-
-	newPing.GetDestination()
-	newPing.GetSender()*/
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact) {
@@ -102,4 +69,31 @@ func (network *Network) SendFindDataMessage(hash string) {
 
 func (network *Network) SendStoreMessage(data []byte) {
 	// TODO
+}
+
+func createPingRequest() {
+
+}
+
+func readPingMessage(message []byte) *kademlia.PingRequest {
+	newPing := &kademlia.PingRequest{}
+
+	var err = proto.Unmarshal(message, newPing)
+
+	if err != nil {
+		log.Fatal("Unmarshalling error ", err)
+	}
+	//fmt.Printf("Sender: " + newPing.GetSender() + " Destination: " + newPing.GetDestination() + "\\n")
+	return newPing
+}
+
+func readStoreMessage(message []byte) *kademlia.StoreRequest {
+	newStore := &kademlia.StoreRequest{}
+
+	var err = proto.Unmarshal(message, newStore)
+
+	if err != nil {
+		log.Fatal("Unmarshalling error ", err)
+	}
+	return newStore
 }
