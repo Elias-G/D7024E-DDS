@@ -24,13 +24,12 @@ func main() {
 		K:     k,
 		Alpha: 1,
 	}
-	networkJoin(me, rootNode, *table)
+	src.NetworkJoin(me, rootNode, *table, k)
 
 	print(kademlia)
 
 	var net = src.Network{}
-
-	net.SendPingMessage(&rootNode, *kademlia)
+	net.SendPingRequest(&rootNode, *kademlia)
 }
 
 func getIpAddress() string {
@@ -67,9 +66,4 @@ func createNode(port int, ip string) src.Contact {
 	address := ip + ":" + strconv.Itoa(port)
 	me := src.NewContact(id, address)
 	return me
-}
-
-func networkJoin(me src.Contact, rootNode src.Contact, table src.RoutingTable) {
-	table.AddContact(rootNode)
-	table.FindClosestContacts(me.ID, k)
 }
