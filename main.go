@@ -1,11 +1,15 @@
 package main
 
 import (
-	"./src"
+	"bufio"
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strconv"
+	"strings"
+
+	"./src"
 )
 
 var k = 20
@@ -28,8 +32,10 @@ func main() {
 
 	print(kademlia)
 
-	var net = src.Network{}
-	net.SendPingRequest(&rootNode, *kademlia)
+	var kadnet = src.Network{}
+
+	//net.SendPingRequest(&rootNode, *kademlia)
+	clilisten()
 }
 
 func getIpAddress() string {
@@ -66,4 +72,32 @@ func createNode(port int, ip string) src.Contact {
 	address := ip + ":" + strconv.Itoa(port)
 	me := src.NewContact(id, address)
 	return me
+}
+
+func clilisten() {
+	cmd := ""
+	fmt.Print("> ")
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		cmd = scanner.Text()
+		words := strings.Fields(cmd)
+		parse(words)
+		//fmt.Println(reflect.TypeOf(words).String())
+		fmt.Print("> ")
+	}
+	if scanner.Err() != nil {
+		// handle error.
+	}
+}
+
+func parse(input []string) {
+	switch input[0] {
+	case "h":
+		fmt.Print("This is help")
+	case "ping":
+		ip := input[1]
+		go kadnet.SendPingMessage(&rootNode, ip)
+	default:
+		fmt.Print("Try again")
+	}
 }
