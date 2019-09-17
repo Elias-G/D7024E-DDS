@@ -29,7 +29,7 @@ func main() {
 	print(kademlia)
 
 	var net = src.Network{}
-	net.SendPingRequest(&rootNode, *kademlia)
+	net.SendPingRequest(rootNode.Address, kademlia.Me.Address)
 }
 
 func getIpAddress() string {

@@ -56,30 +56,33 @@ func handleConnection(conn net.Conn) {
 	buff := buf[:3]
 
 	switch {
+	//Ping
 	case bytes.Equal(buff, pingReqHead):
 		pingRequest := readPingRequest(buf[3:n])
 		sendPingResponse(pingRequest.GetDestination())
-		fmt.Print(pingRequest)
-	case bytes.Equal(buff, findReqHead):
-		findRequest := readFindNodeRequest(buf[3:n])
-		//sendFindNodeResponse(findRequest.)
-		fmt.Print(findRequest)
-	case bytes.Equal(buff, storeReqHead):
-		storeRequest := readStoreRequest(buf[3:n])
-		sendStoreResponse(storeRequest.GetSender(), storeRequest.GetValue())
-		fmt.Print(storeRequest)
 	case bytes.Equal(buff, pingResHead):
 		pingResponse := readPingResponse(buf[3:n])
-		fmt.Print(pingResponse)
+		fmt.Print(pingResponse) //todo: what to do with the response
+	//Find
+	case bytes.Equal(buff, findReqHead):
+		findRequest := readFindNodeRequest(buf[3:n])
+		//todo: find node and respond with node id or value
+		//sendFindNodeResponse(findRequest)
+		fmt.Print(findRequest)
 	case bytes.Equal(buff, findNodeResHead):
 		findNodeResponse := readFindNodeResponse(buf[3:n])
-		fmt.Print(findNodeResponse)
+		fmt.Print(findNodeResponse) //todo: what to do with the response
 	case bytes.Equal(buff, findValueResHead):
 		findValueResponse := readFindNodeResponse(buf[3:n])
-		fmt.Print(findValueResponse)
+		fmt.Print(findValueResponse) //todo: what to do with the response
+	//Store
+	case bytes.Equal(buff, storeReqHead):
+		storeRequest := readStoreRequest(buf[3:n])
+		//todo: hash value, store value and return hash
+		sendStoreResponse(storeRequest.GetSender(), storeRequest.GetValue()) //todo: what to do with the response
 	case bytes.Equal(buff, storeResHead):
 		storeResponse := readStoreResponse(buf[3:n])
-		fmt.Print(storeResponse)
+		fmt.Print(storeResponse) //todo: what to do with the response
 	}
 }
 
@@ -96,7 +99,7 @@ func sendData(destination string, dataToSend []byte, header []byte) {
 
 func sendPingResponse(destination string) {
 	res := &kademlia.PingResponse{
-		Response: "RESPONSE",
+		Response: "OK",
 	}
 	dataToSend, err := proto.Marshal(res)
 	if err != nil {
@@ -146,17 +149,17 @@ func sendStoreResponse(destination string, value []byte) {
 	sendData(destination, dataToSend, storeResHead)
 }
 
-func (network *Network) SendPingRequest(contact *Contact, kademliaObj Kademlia) {
+func (network *Network) SendPingRequest(destination string, sender string) {
 	res := &kademlia.PingRequest{
-		Sender:      kademliaObj.Me.Address,
-		Destination: contact.Address,
+		Sender:      sender,
+		Destination: destination,
 	}
 	dataToSend, err := proto.Marshal(res)
 	if err != nil {
 		log.Fatal("Marshal error", err)
 	}
 
-	sendData(contact.Address, dataToSend, pingReqHead)
+	sendData(destination, dataToSend, pingReqHead)
 }
 
 func (network *Network) SendFindContactRequest(contact *Contact, kademliaObj Kademlia) {
