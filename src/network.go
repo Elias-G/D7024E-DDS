@@ -1,12 +1,13 @@
 package src
 
 import (
-	"./proto"
 	"bytes"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"log"
 	"net"
+
+	"./proto"
+	"github.com/golang/protobuf/proto"
 )
 
 type Network struct {
@@ -146,17 +147,17 @@ func sendStoreResponse(destination string, value []byte) {
 	sendData(destination, dataToSend, storeResHead)
 }
 
-func (network *Network) SendPingRequest(contact *Contact, kademliaObj Kademlia) {
+func (network *Network) SendPingRequest(sender string, destination string) {
 	res := &kademlia.PingRequest{
-		Sender:      kademliaObj.Me.Address,
-		Destination: contact.Address,
+		Sender:      sender,
+		Destination: destination,
 	}
 	dataToSend, err := proto.Marshal(res)
 	if err != nil {
 		log.Fatal("Marshal error", err)
 	}
 
-	sendData(contact.Address, dataToSend, pingReqHead)
+	sendData(destination, dataToSend, pingReqHead)
 }
 
 func (network *Network) SendFindContactRequest(contact *Contact, kademliaObj Kademlia) {

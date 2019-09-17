@@ -13,29 +13,49 @@ import (
 )
 
 var k = 20
+var kadnet = src.Network{}
 
 func main() {
-	var ip = getIpAddress()
+	arg := os.Args[1]
+	//If arg==1 then its the rootnode that is suppose to start
+	if arg == "1" {
+		var ip = getIpAddress()
+		var me = createNode(5000, ip)
+		var table = src.NewRoutingTable(me)
 
-	var rootNode = createNode(5000, "10.0.0.3")
+		var kademlia = &src.Kademlia{
+			Table: *table,
+			Me:    me,
+			K:     k,
+			Alpha: 1,
+		}
 
-	var me = createNode(5000, ip)
-	table := src.NewRoutingTable(me)
+		print(kademlia)
 
-	var kademlia = &src.Kademlia{
-		Table: *table,
-		Me:    me,
-		K:     k,
-		Alpha: 1,
+		src.Listen(me.Address)
+		//if arg == 2 then its a normal node to start
+	} else if arg == "2" {
+		var ip = getIpAddress()
+
+		var rootNode = createNode(5000, "10.0.0.3")
+
+		var me = createNode(5000, ip)
+		table := src.NewRoutingTable(me)
+
+		var kademlia = &src.Kademlia{
+			Table: *table,
+			Me:    me,
+			K:     k,
+			Alpha: 1,
+		}
+		src.NetworkJoin(me, rootNode, *table, k)
+		print(kademlia)
+		//net.SendPingRequest(&rootNode, *kademlia)
+		clilisten(ip)
+	} else {
+		fmt.Print("Choose to be a leader(1) or a follower(2)")
 	}
-	src.NetworkJoin(me, rootNode, *table, k)
 
-	print(kademlia)
-
-	var kadnet = src.Network{}
-
-	//net.SendPingRequest(&rootNode, *kademlia)
-	clilisten()
 }
 
 func getIpAddress() string {
@@ -74,14 +94,14 @@ func createNode(port int, ip string) src.Contact {
 	return me
 }
 
-func clilisten() {
+func clilisten(ip string) {
 	cmd := ""
 	fmt.Print("> ")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		cmd = scanner.Text()
 		words := strings.Fields(cmd)
-		parse(words)
+		parse(ip, words)
 		//fmt.Println(reflect.TypeOf(words).String())
 		fmt.Print("> ")
 	}
@@ -90,13 +110,14 @@ func clilisten() {
 	}
 }
 
-func parse(input []string) {
+func parse(ip string, input []string) {
 	switch input[0] {
 	case "h":
 		fmt.Print("This is help")
 	case "ping":
-		ip := input[1]
-		go kadnet.SendPingMessage(&rootNode, ip)
+		dest := input[1]
+		ipport := dest + ":5000"
+		go kadnet.SendPingRequest(ip, ipport)
 	default:
 		fmt.Print("Try again")
 	}
