@@ -4,4 +4,5 @@ WORKDIR /app
 EXPOSE 5000
 RUN apt-get install net-tools
 COPY . .
-#CMD ["./main.go"]
+#CMD ["/bin/bash/go", "run", "./main.go", "1"]
+#ENTRYPOINT ["/bin/bash/go", "run", "./main.go", "1"]

@@ -5,4 +5,4 @@ EXPOSE 5000
 RUN apt-get install net-tools
 COPY . .
 
-#CMD ["./CreateRoot.go"]
+#CMD ["go", "run", "./main.go", "1"]
