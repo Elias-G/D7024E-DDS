@@ -1,37 +1,36 @@
 package main
 
 import (
-	"Src"
 	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	src "src-code"
 	"strconv"
 	"strings"
 )
 
 var k = 20
-var kadnet = Src.Network{}
+var kadnet = src.Network{}
 
 func main() {
-	//arg := os.Args[1]
-	arg := "1"
+	arg := os.Args[1]
+	//arg := "1"
 
 	err := ioutil.WriteFile("filename.txt", []byte("Hello"), 0755)
 	if err != nil {
 		fmt.Printf("Unable to write file: %v", err)
 	}
 
-
 	//If arg==1 then its the rootnode that is suppose to start
 	if arg == "1" {
 		var ip = getIpAddress()
 		var me = createNode(5000, ip)
-		var table = Src.NewRoutingTable(me)
+		var table = src.NewRoutingTable(me)
 
-		var kademlia = &Src.Kademlia{
+		var kademlia = &src.Kademlia{
 			Table: *table,
 			Me:    me,
 			K:     k,
@@ -40,7 +39,7 @@ func main() {
 
 		print(kademlia)
 
-		Src.Listen(me.Address)
+		src.Listen(me.Address)
 		//if arg == 2 then its a normal node to start
 	} else if arg == "2" {
 		var ip = getIpAddress()
@@ -48,15 +47,15 @@ func main() {
 		var rootNode = createNode(5000, "10.0.0.3")
 
 		var me = createNode(5000, ip)
-		table := Src.NewRoutingTable(me)
+		table := src.NewRoutingTable(me)
 
-		var kademlia = &Src.Kademlia{
+		var kademlia = &src.Kademlia{
 			Table: *table,
 			Me:    me,
 			K:     k,
 			Alpha: 1,
 		}
-		Src.NetworkJoin(me, rootNode, *table, k)
+		src.NetworkJoin(me, rootNode, *table, k)
 		print(kademlia)
 		//net.SendPingRequest(&rootNode, *kademlia)
 		clilisten(ip)
@@ -95,10 +94,10 @@ func getIpAddress() string {
 	return ""
 }
 
-func createNode(port int, ip string) Src.Contact {
-	id := Src.NewRandomKademliaID()
+func createNode(port int, ip string) src.Contact {
+	id := src.NewRandomKademliaID()
 	address := ip + ":" + strconv.Itoa(port)
-	me := Src.NewContact(id, address)
+	me := src.NewContact(id, address)
 	return me
 }
 

@@ -1,12 +1,12 @@
-package Src
+package src
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"log"
 	"net"
-	"./proto"
-	"github.com/golang/protobuf/proto"
+	kademlia "src-code/proto"
 )
 
 type Network struct {
