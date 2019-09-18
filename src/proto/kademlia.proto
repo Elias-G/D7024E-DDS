@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+service Kademlia {
+  rpc Ping (PingRequest) returns (PingResponse);
+  rpc Store (StoreRequest) returns (StoreResponse);
+  rpc FindNode (FindNodeRequest) returns (FindNodeResponse);
+  rpc FindValue (FindNodeRequest) returns (FindValueResponse);
+}
+
+message PingRequest {
+    string sender = 1;
+    string destination = 2;
+}
+
+message PingResponse {
+    string response = 1;
+}
+
+message StoreRequest {
+    string sender = 1;
+    bytes value = 2;
+}
+
+message StoreResponse {
+    string hash = 1;
+}
+
+message FindNodeRequest {
+    string sender = 1;
+    bytes  nodeId = 2;
+}
+
+message FindNodeResponse {
+    bytes id = 1;
+    string address = 2;
+    bytes distance = 3;
+}
+
+message FindValueResponse {
+    bytes value = 1;
+}
