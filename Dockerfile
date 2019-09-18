@@ -1,7 +1,10 @@
-FROM larjim/kademlialab:latest
+FROM golang:latest
 LABEL maintainer = "G4"
-WORKDIR /app
 EXPOSE 5000
-RUN apt-get install net-tools
-COPY . .
-#CMD ["./main.go"]
+ADD src /go/src/
+#RUN go get github.com/golang/protobuf/proto
+#RUN go install src-code
+#RUN go install src-code/proto
+#WORKDIR /go/src/
+#RUN go build -o main .
+#CMD ["/go/src/main", "1"]
