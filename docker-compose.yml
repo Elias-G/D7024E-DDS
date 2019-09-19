@@ -1,9 +1,8 @@
 version: "3"
 
+
 services:
   rootNode:
-    depends_on:
-      - "networks"
     image: test2:latest
     stdin_open: true
     tty: true
@@ -13,10 +12,9 @@ services:
     ports:
       - "5000:5000"
     networks:
-      - kademlia_network
+      kademlia_network:
+        ipv4_address: 10.0.0.3
   kademliaNodes:
-    depends_on:
-      - "networks"
     image: test:latest
     stdin_open: true
     tty: true
@@ -35,3 +33,5 @@ services:
 
 networks:
   kademlia_network:
+    external:
+      name: kademlia-network
