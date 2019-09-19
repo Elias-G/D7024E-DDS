@@ -27,6 +27,7 @@ func main() {
 	//If arg==1 then its the rootnode that is suppose to start
 	if arg == "1" {
 		var ip = getIpAddress()
+		fmt.Print("Address: " + ip)
 		var me = createNode(5000, ip)
 		var table = src.NewRoutingTable(me)
 
@@ -124,9 +125,14 @@ func parse(ip string, input []string) {
 	case "h":
 		fmt.Print("This is help")
 	case "ping":
-		dest := input[1]
-		ipport := dest + ":5000"
-		go kadnet.SendPingRequest(ip, ipport)
+		if len(input) < 2 {
+			fmt.Print("Try again")
+		} else {
+			dest := input[1]
+			port := input[2]
+			ipport := dest + ":" + port
+			go kadnet.SendPingRequest(ipport, ip)
+		}
 	default:
 		fmt.Print("Try again")
 	}

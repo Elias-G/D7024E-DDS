@@ -87,9 +87,10 @@ func handleConnection(conn net.Conn) {
 }
 
 func sendData(destination string, dataToSend []byte, header []byte) {
+	fmt.Print("Destination: " + destination)
 	conn, err := net.Dial("tcp", destination)
 	if err != nil {
-		panic(err)
+		panic(err.Error() + " : Destination " + destination)
 	}
 	_, err = conn.Write(append(header, dataToSend...))
 	if err != nil {
