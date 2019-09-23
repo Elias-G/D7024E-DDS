@@ -13,7 +13,6 @@ import (
 )
 
 var k = 20
-var kadnet = src.Network{}
 
 func main() {
 	arg := os.Args[1]
@@ -24,6 +23,9 @@ func main() {
 		fmt.Printf("Unable to write file: %v", err)
 	}
 
+	// Initiate storage for node
+	var hashTable = src.InitTable()
+
 	//If arg==1 then its the rootnode that is suppose to start
 	if arg == "1" {
 		var ip = getIpAddress()
@@ -31,16 +33,19 @@ func main() {
 		var table = src.NewRoutingTable(me)
 
 		var kademlia = &src.Kademlia{
-			Table: *table,
-			Me:    me,
-			K:     k,
-			Alpha: 1,
+			Table:     *table,
+			Me:        me,
+			K:         k,
+			Alpha:     1,
+			HashTable: hashTable,
 		}
+
+		kadnet := *src.NewNetwork(*kademlia)
 
 		print(kademlia)
 
-		go src.Listen(me.Address)
-		clilisten(ip)
+		go kadnet.Listen(me.Address)
+		clilisten(ip, kadnet)
 		//if arg == 2 then its a normal node to start
 	} else if arg == "2" {
 		var ip = getIpAddress()
@@ -51,16 +56,20 @@ func main() {
 		table := src.NewRoutingTable(me)
 
 		var kademlia = &src.Kademlia{
-			Table: *table,
-			Me:    me,
-			K:     k,
-			Alpha: 1,
+			Table:     *table,
+			Me:        me,
+			K:         k,
+			Alpha:     1,
+			HashTable: hashTable,
 		}
-		src.NetworkJoin(me, rootNode, *table, k)
+
+		kadnet := *src.NewNetwork(*kademlia)
+
+		src.NetworkJoin(*kademlia, rootNode, *table, k)
 		print(kademlia)
 		//net.SendPingRequest(&rootNode, *kademlia)
-		go src.Listen(me.Address)
-		clilisten(ip)
+		go kadnet.Listen(me.Address)
+		clilisten(ip, kadnet)
 	} else {
 		fmt.Print("Choose to be a leader(1) or a follower(2)")
 	}
@@ -103,14 +112,14 @@ func createNode(port int, ip string) src.Contact {
 	return me
 }
 
-func clilisten(ip string) {
+func clilisten(ip string, kadnet src.Network) {
 	cmd := ""
 	fmt.Print("> ")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		cmd = scanner.Text()
 		words := strings.Fields(cmd)
-		parse(ip, words)
+		parse(ip, words, kadnet)
 		//fmt.Println(reflect.TypeOf(words).String())
 		fmt.Print("> ")
 	}
@@ -119,7 +128,7 @@ func clilisten(ip string) {
 	}
 }
 
-func parse(ip string, input []string) {
+func parse(ip string, input []string, kadnet src.Network) {
 	switch input[0] {
 	case "h":
 		fmt.Print("This is help")
