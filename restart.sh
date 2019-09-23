@@ -1,7 +1,5 @@
 #!/bin/bash
-docker swarm leave -f
-docker swarm init
-docker network create --driver overlay --subnet 10.0.0.0/24 --gateway 10.0.0.1 kademlia-network
-docker build -t test ./src
-docker build -t test2 .
-docker stack deploy up -c docker-compose.yml
+docker-compose down
+docker build -t rootnode .
+docker build -t kademlianodes ./src
+docker-compose up --scale kademliaNodes=3 --scale rootnode=1
