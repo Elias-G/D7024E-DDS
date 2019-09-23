@@ -12,6 +12,8 @@ services:
       kademlia_network:
         ipv4_address: 10.0.0.3
   kademliaNodes:
+    depends_on:
+      - rootNode
     image: kademlianodes:latest
     stdin_open: true
     tty: true
