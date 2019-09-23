@@ -10,7 +10,6 @@ import (
 )
 
 type Network struct {
-	Node Kademlia
 }
 
 var pingReqHead = []byte{0, 0, 0}
@@ -21,12 +20,7 @@ var findValueResHead = []byte{1, 0, 0}
 var storeReqHead = []byte{1, 0, 1}
 var storeResHead = []byte{1, 1, 1}
 
-func NewNetwork(node Kademlia) *Network {
-	n := Network{Node: node}
-	return &n
-}
-
-func (network *Network) Listen(address string) {
+func Listen(address string) {
 	// TODO
 	ln, err := net.Listen("tcp", address)
 	if err != nil {
@@ -37,16 +31,16 @@ func (network *Network) Listen(address string) {
 		if err != nil {
 			panic(err)
 		}
-		go network.handleConnection(conn)
+		go handleConnection(conn)
 	}
 }
 
-func NetworkJoin(node Kademlia, rootNode Contact, table RoutingTable, k int) {
+func NetworkJoin(me Contact, rootNode Contact, table RoutingTable, k int) {
 	table.AddContact(rootNode)
-	table.FindClosestContacts(node.Me.ID, k)
+	table.FindClosestContacts(me.ID, k)
 }
 
-func (network *Network) handleConnection(conn net.Conn) {
+func handleConnection(conn net.Conn) {
 	buf := make([]byte, 512)
 	n, err := conn.Read(buf)
 	if err != nil {
@@ -84,14 +78,8 @@ func (network *Network) handleConnection(conn net.Conn) {
 	//Store
 	case bytes.Equal(buff, storeReqHead):
 		storeRequest := readStoreRequest(buf[3:n])
-		// Hash value and store (key, value) pair in hashtable (storage)
-
-		key := HashValue(storeRequest.GetValue())
-		// TODO: Access store method in kademlia.go
-		network.Node.Store(key, storeRequest.GetValue())
-
-		// Return hash
-		sendStoreResponse(storeRequest.GetSender(), key)
+		//todo: hash value, store value and return hash
+		sendStoreResponse(storeRequest.GetSender(), storeRequest.GetValue()) //todo: what to do with the response
 	case bytes.Equal(buff, storeResHead):
 		storeResponse := readStoreResponse(buf[3:n])
 		fmt.Print(storeResponse) //todo: what to do with the response
@@ -147,9 +135,9 @@ func sendFindValueResponse(destination string, value []byte) {
 
 }
 
-func sendStoreResponse(destination string, value string) {
-	hash := value
-
+func sendStoreResponse(destination string, value []byte) {
+	hash := ""
+	//todo: hash and store here
 	res := &kademlia.StoreResponse{
 		Hash: hash,
 	}
