@@ -11,6 +11,7 @@ import (
 
 type Network struct {
 	Node Kademlia
+	findNodeRespCh chan [] string
 }
 
 var pingReqHead = []byte{0, 0, 0}
@@ -49,7 +50,7 @@ func NetworkJoin(node Kademlia, rootNode Contact) {
 }
 
 // Sends out alpha RPCs for FindNode and gets k contacts from each
-func (network *Network) NodeLookup(findNodeRespCh chan []string, id *KademliaID)(contacts []Contact) {
+func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact) {
 	var table = network.Node.Table
 	var alpha = network.Node.Alpha
 	var closest = table.FindClosestContacts(id, alpha)
@@ -58,7 +59,7 @@ func (network *Network) NodeLookup(findNodeRespCh chan []string, id *KademliaID)
 	for i := 0; i < alpha; i++ {
 		var contact = closest[i]
 		network.SendFindContactRequest(&contact, network.Node, id)
-		receivedContacts = append(receivedContacts, <- findNodeRespCh...)
+		receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
 	}
 	receivedIDs = stringToKademliaID(receivedContacts)
 	// TODO: Sort received IDs, is first contact target ID?
@@ -109,9 +110,8 @@ func (network *Network) handleConnection(conn net.Conn) {
 			fmt.Print(findRequest)
 		case bytes.Equal(buff, findNodeResHead):
 			findNodeResponse := readFindNodeResponse(buf[3:n])
-			// TODO: Return list of contacts to where???
-			findNodeRespCh := make(chan []string)
-			findNodeRespCh <- findNodeResponse.Ids
+			// TODO: Return value or list of contacts??
+			network.findNodeRespCh <- findNodeResponse.Ids
 
 			fmt.Print(findNodeResponse)
 		case bytes.Equal(buff, findValueResHead):
