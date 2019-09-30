@@ -142,7 +142,8 @@ func parse(node *src.Kademlia, input []string, kadnet src.Network) {
 		go kadnet.SendPingRequest(ipport, node.Me.Address)
 
 	case "get":
-		hash := input[1]
+		//hash := input[1]
+		hash := "aaaaaaaaadaaaaaaaaadaaaaaaaaadaaaaaaaaad"
 		data  := node.LookupData(hash)
 		if data == "" {
 			contacts := node.LookupDataRoutingTable(hash)
@@ -150,7 +151,7 @@ func parse(node *src.Kademlia, input []string, kadnet src.Network) {
 			if len(contacts) == 0{
 				fmt.Print("we found no contacts...?")	
 			}else{
-				go kadnet.SendFindValueRequest(&contacts[0], hash)
+				go kadnet.SendFindValueRequest(*node,&contacts[0], hash)
 			}
 			//go kadnet.SendFindValueRequest(contacts[1])
 			//go kadnet.SendFindValueRequest(contacts[2])
@@ -161,8 +162,8 @@ func parse(node *src.Kademlia, input []string, kadnet src.Network) {
 
 	case "store":
 		val := input[1]
-		hash := input[2]
-		go node.Store(hash, []byte(val))
+		//hash := input[2]//aaaaaaaaadaaaaaaaaadaaaaaaaaadaaaaaaaaad
+		go node.Store("aaaaaaaaadaaaaaaaaadaaaaaaaaadaaaaaaaaad", []byte(val))
 
 	case "ip":
 		fmt.Print(node.Me.Address)

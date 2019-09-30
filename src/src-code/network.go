@@ -52,7 +52,7 @@ func NetworkJoin(node Kademlia, rootNode Contact) {
 }
 
 // Sends out alpha RPCs for FindNode and gets k contacts from each
-func (network *Network) NodeLookup(findNodeRespCh chan []string, id *KademliaID) (contacts []Contact) {
+/*func (network *Network) NodeLookup(findNodeRespCh chan []string, id *KademliaID) (contacts []Contact) {
 	var table = network.Node.Table
 	var alpha = network.Node.Alpha
 	var closest = table.FindClosestContacts(id, alpha)
@@ -82,7 +82,7 @@ func (network *Network) NodeLookup(findNodeRespCh chan []string, id *KademliaID)
 		}
 	}
 	return contacts
-}
+}*/
 
 func stringToKademliaID(strings []string) (ids []KademliaID) {
 	for i, str := range strings {
@@ -92,7 +92,7 @@ func stringToKademliaID(strings []string) (ids []KademliaID) {
 }
 
 func (network *Network) handleConnection(conn net.Conn) {
-	buf := make([]byte, 512)
+	buf := make([]byte, 256)
 	n, err := conn.Read(buf)
 	if err != nil {
 		panic(err)
@@ -134,9 +134,15 @@ func (network *Network) handleConnection(conn net.Conn) {
 		findValRequest := readFindValueRequest(buf[3:n])
 		// Hash value and store (key, value) pair in hashtable
 		key := findValRequest.GetValue()
-		network.Node.LookupData(string(key))
-		// Return hash
-		sendFindValueResponse(findValRequest.GetSender(), network.Node.Me.Address, key)
+		data := network.Node.LookupData(string(key))
+		databyte := []byte(data)
+		// Return value
+		fmt.Print(" new dest: "+findValRequest.GetSender())
+		fmt.Print(" new sender: "+network.Node.Me.Address)
+		fmt.Print(databyte)
+		fmt.Print(" data as string: " +data)
+		//sendFindValueResponse(findValRequest.GetSender(), network.Node.Me.Address, []byte("key"))
+		sendFindValueResponse(findValRequest.GetSender(), network.Node.Me.Address, data)
 	
 	case bytes.Equal(buff, findValueResHead):
 		findValueResponse := readFindNodeResponse(buf[3:n])
@@ -192,10 +198,11 @@ func sendFindNodeResponse(destination string, sender string, ids []string) {
 	sendData(destination, dataToSend, findNodeResHead)*/
 }
 
-func sendFindValueResponse(destination string, sender string, value []byte) {
+func sendFindValueResponse(destination string, sender string, value string) {
+	fmt.Print(" Value: " +value+ " sending pure string")
 	res := &kademlia.FindValueResponse{
 		Sender: sender,
-		Value:  value,
+		Value:  "THIS SHOULD WORK",
 	}
 	dataToSend, err := proto.Marshal(res)
 	if err != nil {
@@ -235,7 +242,7 @@ func (network *Network) SendPingRequest(destination string, sender string) {
 }
 
 // TODO: Send along target ID
-func (network *Network) SendFindContactRequest(contact Contact, kademliaObj Kademlia, targetID *KademliaID) {
+/*func (network *Network) SendFindContactRequest(contact Contact, kademliaObj Kademlia, targetID *KademliaID) {
 	res := &kademlia.FindNodeRequest{
 		Sender:		kademliaObj.Me.Address,
 		Contact: 	formatContactForSending(contact),
@@ -246,11 +253,11 @@ func (network *Network) SendFindContactRequest(contact Contact, kademliaObj Kade
 	}
 
 	sendData(contact.Address, dataToSend, findNodeReqHead)
-}
+}*/
 
-func (network *Network) SendFindValueRequest(contact *Contact, hash string) {
+func (network *Network) SendFindValueRequest(kademliaObj Kademlia,contact *Contact, hash string) {
 	res := &kademlia.FindValueRequest{
-		Sender: contact.Address,
+		Sender: kademliaObj.Me.Address,
 		Key:  hash,
 	}
 	dataToSend, err := proto.Marshal(res)
@@ -362,6 +369,7 @@ func readFindValueResponse(message []byte) *kademlia.FindValueResponse {
 	}
 	return res
 }
+
 
 
 

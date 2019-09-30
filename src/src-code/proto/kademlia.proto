@@ -45,7 +45,7 @@ message FindNodeResponse {
 
 message FindValueResponse {
     string sender = 1;
-    bytes value = 2;
+    string value = 2;
 }
 
 message Contact {
