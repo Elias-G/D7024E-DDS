@@ -53,19 +53,14 @@ func (network *Network) handleConnection(conn net.Conn) {
 		panic(err)
 	}
 
-	/*fmt.Print(buf)
-	fmt.Print("\\n")
-	fmt.Print(n)
-	fmt.Print("\\n")
-	fmt.Print(buf[3:n])*/
-
 	buff := buf[:3]
 
 	switch {
 	//Ping
 	case bytes.Equal(buff, pingReqHead):
 		pingRequest := readPingRequest(buf[3:n])
-		sendPingResponse(pingRequest.GetDestination())
+		fmt.Printf("Ping Request, Destination: " + pingRequest.GetDestination() + ", Sender: " + pingRequest.GetSender())
+		sendPingResponse(pingRequest.GetSender())
 	case bytes.Equal(buff, pingResHead):
 		pingResponse := readPingResponse(buf[3:n])
 		fmt.Print(pingResponse) //todo: what to do with the response
