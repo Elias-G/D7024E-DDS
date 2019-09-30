@@ -16,10 +16,11 @@ type Network struct {
 
 var pingReqHead = []byte{0, 0, 0}
 var pingResHead = []byte{0, 0, 1}
-var findReqHead = []byte{0, 1, 0}
-var findNodeResHead = []byte{0, 1, 1}
+var findValueReqHead = []byte{0, 1, 0}
 var findValueResHead = []byte{1, 0, 0}
-var storeReqHead = []byte{1, 0, 1}
+var findNodeReqHead = []byte{0, 1, 1}
+var findNodeResHead = []byte{1, 0, 1}
+var storeReqHead = []byte{1, 1, 0}
 var storeResHead = []byte{1, 1, 1}
 
 func NewNetwork(node Kademlia) *Network {
@@ -94,27 +95,35 @@ func (network *Network) handleConnection(conn net.Conn) {
 		pingResponse := readPingResponse(buf[3:n])
 		fmt.Print(pingResponse) //todo: what to do with the response
 	//Find
-	case bytes.Equal(buff, findReqHead):
-		findRequest := readFindNodeRequest(buf[3:n])
+	case bytes.Equal(buff, findNodeReqHead):
+		/*findRequest := readFindNodeRequest(buf[3:n])
 		// Get NodeID as string and convert it to type KademliaID
 		var id = NewKademliaID(findRequest.NodeId)
 		// List of k closest contacts to the target
-		var contacts = network.Node.Table.FindClosestContacts(id, network.Node.K)
+		/*var contacts = network.Node.Table.FindClosestContacts(id, network.Node.K)*/
 		// List of IDs to the k closest contacts
-		var ids []string
+		/*var ids []string
 		for i := 0; i < network.Node.K; i++ {
 			ids[i] = contacts[i].ID.String()
 		}
 		// Send response with address of sender and list of IDs
 		sendFindNodeResponse(findRequest.GetSender(), network.Node.Me.Address, ids)
-		fmt.Print(findRequest)
+		fmt.Print(findRequest)*/
 	case bytes.Equal(buff, findNodeResHead):
 		findNodeResponse := readFindNodeResponse(buf[3:n])
 		// TODO: Return list of contacts to where???
-		findNodeRespCh := make(chan []string)
-		findNodeRespCh <- findNodeResponse.Ids
+		/*findNodeRespCh := make(chan []string)
+		findNodeRespCh <- findNodeResponse.Ids*/
 
 		fmt.Print(findNodeResponse)
+	case bytes.Equal(buff, findValueReqHead):
+		findValRequest := readFindValueRequest(buf[3:n])
+		// Hash value and store (key, value) pair in hashtable
+		key := findValRequest.GetValue()
+		network.Node.LookupData(string(key))
+		// Return hash
+		sendFindValueResponse(findValRequest.GetSender(), network.Node.Me.Address, key)
+	
 	case bytes.Equal(buff, findValueResHead):
 		findValueResponse := readFindNodeResponse(buf[3:n])
 		fmt.Print(findValueResponse) //todo: what to do with the response
@@ -157,7 +166,7 @@ func sendPingResponse(destination string, sender string) {
 }
 
 func sendFindNodeResponse(destination string, sender string, ids []string) {
-	res := &kademlia.FindNodeResponse{
+	/*res := &kademlia.FindNodeResponse{
 		Sender: sender,
 		Ids:    ids,
 	}
@@ -166,7 +175,7 @@ func sendFindNodeResponse(destination string, sender string, ids []string) {
 		log.Fatal("Marshal error", err)
 	}
 
-	sendData(destination, dataToSend, findNodeResHead)
+	sendData(destination, dataToSend, findNodeResHead)*/
 }
 
 func sendFindValueResponse(destination string, sender string, value []byte) {
@@ -215,18 +224,28 @@ func (network *Network) SendPingRequest(destination string, sender string) {
 func (network *Network) SendFindContactRequest(contact *Contact, kademliaObj Kademlia, targetID *KademliaID) {
 	res := &kademlia.FindNodeRequest{
 		Sender: kademliaObj.Me.Address,
-		NodeId: kademliaObj.Me.ID.String(),
+		NodeID: kademliaObj.Me.ID.String(),
 	}
 	dataToSend, err := proto.Marshal(res)
 	if err != nil {
 		log.Fatal("Marshal error", err)
 	}
 
-	sendData(contact.Address, dataToSend, findReqHead)
+	sendData(contact.Address, dataToSend, findNodeReqHead)
 }
 
-func (network *Network) SendFindDataRequest(hash string) {
-	// TODO
+func (network *Network) SendFindValueRequest(contact *Contact, hash string) {
+	res := &kademlia.FindValueRequest{
+		Sender: contact.Address,
+		Key:  hash,
+	}
+	dataToSend, err := proto.Marshal(res)
+	if err != nil {
+		log.Fatal("Marshal error", err)
+	}
+
+	sendData(contact.Address, dataToSend, findValueReqHead)
+	
 }
 
 func (network *Network) SendStoreRequest(contact *Contact, kademliaObj Kademlia, data []byte) {
@@ -299,6 +318,17 @@ func readStoreResponse(message []byte) *kademlia.StoreResponse {
 
 func readFindNodeResponse(message []byte) *kademlia.FindNodeResponse {
 	res := &kademlia.FindNodeResponse{}
+
+	var err = proto.Unmarshal(message, res)
+
+	if err != nil {
+		log.Fatal("Unmarshalling error ", err)
+	}
+	return res
+}
+
+func readFindValueRequest(message []byte) *kademlia.FindValueResponse {
+	res := &kademlia.FindValueResponse{}
 
 	var err = proto.Unmarshal(message, res)
 
