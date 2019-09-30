@@ -6,6 +6,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"log"
 	"net"
+	//kadkad "src-code"
 	kademlia "src-code/proto"
 )
 
@@ -77,6 +78,7 @@ func (network *Network) handleConnection(conn net.Conn) {
 		fmt.Print(findRequest)
 	case bytes.Equal(buff, findNodeResHead):
 		findNodeResponse := readFindNodeResponse(buf[3:n])
+
 		fmt.Print(findNodeResponse) //todo: what to do with the response
 	case bytes.Equal(buff, findValueResHead):
 		findValueResponse := readFindNodeResponse(buf[3:n])

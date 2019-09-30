@@ -131,11 +131,12 @@ func clilisten(node *src.Kademlia, kadnet src.Network) {
 func parse(node *src.Kademlia, input []string, kadnet src.Network) {
 	switch input[0] {
 	case "h":
-		fmt.Print("This is help")
+		fmt.Print("This is helpful")
+		fmt.Print(node.Me.Address)
 	case "ping":
 		dest := input[1]
 		ipport := dest + ":5000"
-		go kadnet.SendPingRequest(ipport,node.Me.Address)
+		go kadnet.SendPingRequest(ipport, node.Me.Address)
 
 	case "get":
 		hash := input[1]
@@ -143,7 +144,10 @@ func parse(node *src.Kademlia, input []string, kadnet src.Network) {
 	case "store":
 		val := input[1]
 		hash := input[2]
-		go node.Store(hash,[]byte(val))
+		go node.Store(hash, []byte(val))
+
+	case "ip":
+		fmt.Print(node.Me.Address)
 	default:
 		fmt.Print("Try again")
 	}
