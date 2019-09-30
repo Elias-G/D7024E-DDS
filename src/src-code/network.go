@@ -11,7 +11,8 @@ import (
 
 type Network struct {
 	Node Kademlia
-	findNodeRespCh chan [] Contact
+	pingRespCh chan *kademlia.PingResponse
+	findNodeRespCh chan []Contact
 }
 
 var pingReqHead = []byte{0, 0, 0}
@@ -22,8 +23,8 @@ var findValueResHead = []byte{1, 0, 0}
 var storeReqHead = []byte{1, 0, 1}
 var storeResHead = []byte{1, 1, 1}
 
-func NewNetwork(node Kademlia) *Network {
-	n := Network{Node: node}
+func NewNetwork(node Kademlia, pingRespCh chan *kademlia.PingResponse, findNodeRespCh chan []Contact) *Network {
+	n := Network{Node: node, pingRespCh:pingRespCh, findNodeRespCh:findNodeRespCh}
 	return &n
 }
 
@@ -99,7 +100,8 @@ func (network *Network) handleConnection(conn net.Conn) {
 			sendPingResponse(pingRequest.GetSender(), network.Node.Me.Address)
 		case bytes.Equal(buff, pingResHead):
 			pingResponse := readPingResponse(buf[3:n])
-			fmt.Print(pingResponse) //todo: what to do with the response
+			network.pingRespCh <- pingResponse
+			//fmt.Print(pingResponse)
 		//Find
 		case bytes.Equal(buff, findReqHead):
 			findRequest := readFindNodeRequest(buf[3:n])
@@ -142,7 +144,8 @@ func (network *Network) handleConnection(conn net.Conn) {
 func sendData(destination string, dataToSend []byte, header []byte) {
 	conn, err := net.Dial("tcp", destination)
 	if err != nil {
-		panic(err)
+		log.Printf(err.Error())
+		return
 	}
 	_, err = conn.Write(append(header, dataToSend...))
 	if err != nil {
@@ -206,7 +209,7 @@ func sendStoreResponse(destination string, sender string, value string) {
 	sendData(destination, dataToSend, storeResHead)
 }
 
-func (network *Network) SendPingRequest(destination string, sender string) {
+func (network *Network) SendPingRequest(destination string, sender string){
 	res := &kademlia.PingRequest{
 		Sender:      sender,
 		Destination: destination,

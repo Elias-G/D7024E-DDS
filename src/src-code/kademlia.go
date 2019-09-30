@@ -1,11 +1,17 @@
 package src
 
+import (
+	"fmt"
+	"time"
+)
+
 type Kademlia struct {
 	Table     RoutingTable
 	Me        Contact
 	K         int
 	Alpha     int
 	HashTable map[string][]byte
+	PingWait  time.Duration
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {
@@ -23,8 +29,21 @@ func (kademlia *Kademlia) Store(key string, value []byte) {
 
 func (kademlia *Kademlia) Ping(network Network, destination string, sender string) {
 	// TODO
+	var found = false
+	timer := time.AfterFunc(time.Second * 5, func() {
+		if found == false {
+			//todo: remove from bucket
+			//find node contact in bucket and remove it
+			fmt.Printf("Could not ping node \n")
+			return
+		}
+	})
 	network.SendPingRequest(destination, sender)
-	//wait for response
-	//if response: move to front of bucket
-	//else: remove from bucket
+
+	response := <-network.pingRespCh
+	found=true
+	timer.Stop()
+	fmt.Printf("Response: " + response.GetResponse() + " from sender: " + response.GetSender() + "\n")
+	//todo: move to front of bucket
+	//find node contact in bucket and add it to front
 }
