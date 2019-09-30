@@ -30,6 +30,7 @@ func main() {
 	//If arg==1 then its the rootnode that is suppose to start
 	if arg == "1" {
 		var ip = getIpAddress()
+		log.Printf("IP: " + ip)
 		var me = createNode(5000, ip)
 		var table = src.NewRoutingTable(me)
 
@@ -50,6 +51,7 @@ func main() {
 		//if arg == 2 then its a normal node to start
 	} else if arg == "2" {
 		var ip = getIpAddress()
+		log.Printf("IP: " + ip)
 
 		var rootNode = createNode(5000, "10.0.0.3")
 
@@ -83,8 +85,9 @@ func getIpAddress() string {
 		log.Fatal("interface error", err)
 	}
 
+
 	for _, i := range ifaces {
-		if i.Name == "eth1" {
+		if i.Name == "eth0" {
 			addrs, err := i.Addrs()
 			if err != nil {
 				log.Fatal("interface error", err)
@@ -97,7 +100,6 @@ func getIpAddress() string {
 				case *net.IPAddr:
 					ip = v.IP
 				}
-				fmt.Printf(ip.String())
 				return ip.String()
 			}
 		}

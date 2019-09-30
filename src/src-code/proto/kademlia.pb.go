@@ -250,7 +250,7 @@ func (m *FindNodeRequest) GetNodeID() string {
 	if m != nil {
 		return m.NodeID
 	}
-	return ""
+	return nil
 }
 
 type FindValueRequest struct {

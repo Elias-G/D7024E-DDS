@@ -46,3 +46,11 @@ func (kademlia *Kademlia) Store(key string, value []byte) {
 	kademlia.HashTable[key] = value
 	fmt.Print(" Successful store val: " + string(value) + "\n")
 }
+
+func (kademlia *Kademlia) Ping(network Network, destination string, sender string) {
+	// TODO
+	network.SendPingRequest(destination, sender)
+	//wait for response
+	//if response: move to front of bucket
+	//else: remove from bucket
+}
