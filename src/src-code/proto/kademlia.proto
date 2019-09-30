@@ -13,7 +13,8 @@ message PingRequest {
 }
 
 message PingResponse {
-    string response = 1;
+    string sender = 1;
+    string response = 2;
 }
 
 message StoreRequest {
@@ -22,20 +23,21 @@ message StoreRequest {
 }
 
 message StoreResponse {
-    string hash = 1;
+    string sender = 1;
+    string hash = 2;
 }
 
 message FindNodeRequest {
     string sender = 1;
-    bytes  nodeId = 2;
+    string  nodeId = 2;
 }
 
 message FindNodeResponse {
-    bytes id = 1;
-    string address = 2;
-    bytes distance = 3;
+    string sender = 1;
+    repeated string ids = 2;
 }
 
 message FindValueResponse {
-    bytes value = 1;
+    string sender = 1;
+    bytes value = 2;
 }

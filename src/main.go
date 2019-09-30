@@ -13,6 +13,7 @@ import (
 )
 
 var k = 20
+var alpha = 3
 
 func main() {
 	arg := os.Args[1]
@@ -65,7 +66,7 @@ func main() {
 
 		kadnet := *src.NewNetwork(*kademlia)
 
-		src.NetworkJoin(*kademlia, rootNode, *table, k)
+		src.NetworkJoin(*kademlia, rootNode)
 		print(kademlia)
 		//net.SendPingRequest(&rootNode, *kademlia)
 		go kadnet.Listen(me.Address)
