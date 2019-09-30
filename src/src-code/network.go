@@ -12,7 +12,8 @@ import (
 
 type Network struct {
 	Node Kademlia
-	findNodeRespCh chan [] Contact
+	pingRespCh chan *kademlia.PingResponse
+	findNodeRespCh chan []Contact
 }
 
 var pingReqHead = []byte{0, 0, 0}
@@ -24,8 +25,8 @@ var findNodeResHead = []byte{1, 0, 1}
 var storeReqHead = []byte{1, 1, 0}
 var storeResHead = []byte{1, 1, 1}
 
-func NewNetwork(node Kademlia) *Network {
-	n := Network{Node: node}
+func NewNetwork(node Kademlia, pingRespCh chan *kademlia.PingResponse, findNodeRespCh chan []Contact) *Network {
+	n := Network{Node: node, pingRespCh:pingRespCh, findNodeRespCh:findNodeRespCh}
 	return &n
 }
 
@@ -101,70 +102,75 @@ func (network *Network) handleConnection(conn net.Conn) {
 	buff := buf[:3]
 
 	switch {
-	//Ping
-	case bytes.Equal(buff, pingReqHead):
-		pingRequest := readPingRequest(buf[3:n])
-		sendPingResponse(pingRequest.GetDestination(), network.Node.Me.Address)
-	case bytes.Equal(buff, pingResHead):
-		pingResponse := readPingResponse(buf[3:n])
-		fmt.Print(pingResponse) //todo: what to do with the response
-	//Find
-	case bytes.Equal(buff, findNodeReqHead):
-		/*findRequest := readFindNodeRequest(buf[3:n])
-		// Get NodeID as string and convert it to type KademliaID
-		var id = NewKademliaID(findRequest.NodeId)
-		// List of k closest contacts to the target
-		/*var contacts = network.Node.Table.FindClosestContacts(id, network.Node.K)*/
-		// List of IDs to the k closest contacts
-		/*var ids []string
-		for i := 0; i < network.Node.K; i++ {
-			ids[i] = contacts[i].ID.String()
-		}
-		// Send response with address of sender and list of IDs
-		sendFindNodeResponse(findRequest.GetSender(), network.Node.Me.Address, ids)
-		fmt.Print(findRequest)*/
-	case bytes.Equal(buff, findNodeResHead):
-		findNodeResponse := readFindNodeResponse(buf[3:n])
-		// TODO: Return list of contacts to where???
-		/*findNodeRespCh := make(chan []string)
-		findNodeRespCh <- findNodeResponse.Ids*/
+		//Ping
+		case bytes.Equal(buff, pingReqHead):
+			pingRequest := readPingRequest(buf[3:n])
+			fmt.Printf("Ping Request, Destination: " + pingRequest.GetDestination() + ", Sender: " + pingRequest.GetSender())
+			sendPingResponse(pingRequest.GetSender(), network.Node.Me.Address)
+		case bytes.Equal(buff, pingResHead):
+			pingResponse := readPingResponse(buf[3:n])
+			network.pingRespCh <- pingResponse
+			//fmt.Print(pingResponse)
+		//Find
+		case bytes.Equal(buff, findNodeReqHead):
+			/*findNodeRequest := readFindNodeRequest(buf[3:n])
+			// Get NodeID as string and convert it to type KademliaID
+			var id = NewKademliaID(findNodeRequest.Contact.NodeId)
+			// List of k closest contacts to the target
+			var contacts = network.Node.Table.FindClosestContacts(id, network.Node.K)
+			// List of IDs to the k closest contacts
+			var ids []string
+			for i := 0; i < network.Node.K; i++ {
+				ids[i] = contacts[i].ID.String()
+			}
+			// Send response with address of sender and list of IDs
+			sendFindNodeResponse(findRequest.GetSender(), network.Node.Me.Address, contacts)
+			fmt.Print(findRequest)*/
+		case bytes.Equal(buff, findNodeResHead):
+			findNodeResponse := readFindNodeResponse(buf[3:n])
+			// TODO: Return value or list of contacts??
+			var contacts = formatContactsForReading(findNodeResponse.Ids)
+			network.findNodeRespCh <- contacts
 
-		fmt.Print(findNodeResponse)
-	case bytes.Equal(buff, findValueReqHead):
-		findValRequest := readFindValueRequest(buf[3:n])
-		// Hash value and store (key, value) pair in hashtable
-		key := findValRequest.GetValue()
-		data := network.Node.LookupData(string(key))
-		databyte := []byte(data)
-		// Return value
-		fmt.Print(" new dest: "+findValRequest.GetSender())
-		fmt.Print(" new sender: "+network.Node.Me.Address)
-		fmt.Print(databyte)
-		fmt.Print(" data as string: " +data)
-		//sendFindValueResponse(findValRequest.GetSender(), network.Node.Me.Address, []byte("key"))
-		sendFindValueResponse(findValRequest.GetSender(), network.Node.Me.Address, data)
-	
-	case bytes.Equal(buff, findValueResHead):
-		findValueResponse := readFindNodeResponse(buf[3:n])
-		fmt.Print(findValueResponse) //todo: what to do with the response
-	//Store
-	case bytes.Equal(buff, storeReqHead):
-		storeRequest := readStoreRequest(buf[3:n])
-		// Hash value and store (key, value) pair in hashtable
-		key := HashValue(storeRequest.GetValue())
-		network.Node.Store(key, storeRequest.GetValue())
-		// Return hash
-		sendStoreResponse(storeRequest.GetSender(), network.Node.Me.Address, key)
-	case bytes.Equal(buff, storeResHead):
-		storeResponse := readStoreResponse(buf[3:n])
-		fmt.Print(storeResponse) //todo: what to do with the response
+			fmt.Print(findNodeResponse)
+		case bytes.Equal(buff, findValueReqHead):
+			findValRequest := readFindValueRequest(buf[3:n])
+			// Hash value and store (key, value) pair in hashtable
+			key := findValRequest.GetKey()
+			data := network.Node.LookupData(string(key))
+			databyte := []byte(data)
+			// Return value
+			fmt.Print(" new dest: "+findValRequest.GetSender())
+			fmt.Print(" new sender: "+network.Node.Me.Address)
+			fmt.Print(databyte)
+			fmt.Print(" data as string: " +data)
+			//sendFindValueResponse(findValRequest.GetSender(), network.Node.Me.Address, []byte("key"))
+			sendFindValueResponse(findValRequest.GetSender(), network.Node.Me.Address, data)
+		
+		case bytes.Equal(buff, findValueResHead):
+			findValueResponse := readFindValueResponse(buf[3:n])
+			value := findValueResponse.GetValue()
+			fmt.Print(value) //todo: what to do with the response
+		//Store
+		case bytes.Equal(buff, storeReqHead):
+			storeRequest := readStoreRequest(buf[3:n])
+			// Hash value and store (key, value) pair in hashtable
+			key := HashValue(storeRequest.GetValue())
+			network.Node.Store(key, storeRequest.GetValue())
+			// Return hash
+			sendStoreResponse(storeRequest.GetSender(), network.Node.Me.Address, key)
+		case bytes.Equal(buff, storeResHead):
+			storeResponse := readStoreResponse(buf[3:n])
+			fmt.Print(storeResponse) //todo: what to do with the response
+		
 	}
 }
 
 func sendData(destination string, dataToSend []byte, header []byte) {
 	conn, err := net.Dial("tcp", destination)
 	if err != nil {
-		panic(err)
+		log.Printf(err.Error())
+		return
 	}
 	_, err = conn.Write(append(header, dataToSend...))
 	if err != nil {
@@ -185,7 +191,7 @@ func sendPingResponse(destination string, sender string) {
 	sendData(destination, dataToSend, pingResHead)
 }
 
-func sendFindNodeResponse(destination string, sender string, ids []string) {
+func sendFindNodeResponse(destination string, sender string, ids []Contact) {
 	/*res := &kademlia.FindNodeResponse{
 		Sender: sender,
 		Ids:    ids,
@@ -199,10 +205,9 @@ func sendFindNodeResponse(destination string, sender string, ids []string) {
 }
 
 func sendFindValueResponse(destination string, sender string, value string) {
-	fmt.Print(" Value: " +value+ " sending pure string")
 	res := &kademlia.FindValueResponse{
 		Sender: sender,
-		Value:  "THIS SHOULD WORK",
+		Value:  value,
 	}
 	dataToSend, err := proto.Marshal(res)
 	if err != nil {
@@ -228,7 +233,7 @@ func sendStoreResponse(destination string, sender string, value string) {
 	sendData(destination, dataToSend, storeResHead)
 }
 
-func (network *Network) SendPingRequest(destination string, sender string) {
+func (network *Network) SendPingRequest(destination string, sender string){
 	res := &kademlia.PingRequest{
 		Sender:      sender,
 		Destination: destination,
@@ -348,8 +353,8 @@ func readFindNodeResponse(message []byte) *kademlia.FindNodeResponse {
 	return res
 }
 
-func readFindValueRequest(message []byte) *kademlia.FindValueResponse {
-	res := &kademlia.FindValueResponse{}
+func readFindValueRequest(message []byte) *kademlia.FindValueRequest {
+	res := &kademlia.FindValueRequest{}
 
 	var err = proto.Unmarshal(message, res)
 

@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	src "src-code"
+	kademlia2 "src-code/proto"
 	"strconv"
 	"strings"
 )
@@ -40,9 +41,10 @@ func main() {
 			K:         k,
 			Alpha:     1,
 			HashTable: hashTable,
+			PingWait:  20000000000,
 		}
 
-		kadnet := *src.NewNetwork(*kademlia)
+		kadnet := *src.NewNetwork(*kademlia, make(chan *kademlia2.PingResponse), make(chan []src.Contact))
 
 		print(kademlia)
 
@@ -66,7 +68,7 @@ func main() {
 			HashTable: hashTable,
 		}
 
-		kadnet := *src.NewNetwork(*kademlia)
+		kadnet := *src.NewNetwork(*kademlia, make(chan *kademlia2.PingResponse), make(chan []src.Contact))
 
 		src.NetworkJoin(*kademlia, rootNode)
 		print(kademlia)
