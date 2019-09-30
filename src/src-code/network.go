@@ -53,26 +53,33 @@ func (network *Network) NodeLookup(findNodeRespCh chan []string, id *KademliaID)
 	var table = network.Node.Table
 	var alpha = network.Node.Alpha
 	var closest = table.FindClosestContacts(id, alpha)
-	var receivedContacts []string
-	var receivedIDs []KademliaID
+	var receivedMessage []string
+	var closestSoFar = closest[0].ID
+	var receivedContacts []Contact
+
 	for i := 0; i < alpha; i++ {
 		var contact = closest[i]
 		network.SendFindContactRequest(&contact, network.Node, id)
-		receivedContacts = append(receivedContacts, <- findNodeRespCh...)
+		receivedContacts = append(receivedMessage, <- findNodeRespCh...)
 	}
-	receivedIDs = stringToKademliaID(receivedContacts)
-	// TODO: Sort received IDs, is first contact target ID?
-	if receivedIDs[0] != *id {
+
+	// Sort received list of contacts
+	candidates := ShortList{id, receivedContacts}
+	candidates.Sort()
+	var shortList = candidates.Contacts
+
+	// While target ID is not yet found and recent responses are closer than the previous closest,
+	// Send new find contact requests
+	for !shortList[0].ID.Equals(id) && shortList[0].ID.CalcDistance(id).Less(closestSoFar.CalcDistance(id)) {
+		closestSoFar = shortList[0].ID
 		// TODO: Send new find contact requests
+		for i := 0; i < alpha; i++ {
+			var contact = shortList[i]
+			network.SendFindContactRequest(&contact, network.Node, id)
+			receivedContacts = append(receivedContacts, <- findNodeRespCh...)
+		}
 	}
 	return contacts
-}
-
-func stringToKademliaID(strings []string)(ids []KademliaID) {
-	for i, str := range strings {
-		ids[i] = *NewKademliaID(str)
-	}
-	return ids
 }
 
 func (network *Network) handleConnection(conn net.Conn) {
