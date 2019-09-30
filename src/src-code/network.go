@@ -11,7 +11,7 @@ import (
 
 type Network struct {
 	Node Kademlia
-	findNodeRespCh chan [] string
+	findNodeRespCh chan [] Contact
 }
 
 var pingReqHead = []byte{0, 0, 0}
@@ -54,16 +54,14 @@ func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact) {
 	var table = network.Node.Table
 	var alpha = network.Node.Alpha
 	var closest = table.FindClosestContacts(id, alpha)
-	var receivedContacts []string
-	var receivedIDs []KademliaID
+	var receivedContacts []Contact
 	for i := 0; i < alpha; i++ {
 		var contact = closest[i]
-		network.SendFindContactRequest(&contact, network.Node, id)
+		network.SendFindContactRequest(contact, network.Node, id)
 		receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
 	}
-	receivedIDs = stringToKademliaID(receivedContacts)
 	// TODO: Sort received IDs, is first contact target ID?
-	if receivedIDs[0] != *id {
+	if receivedContacts[0].ID != id {
 		// TODO: Send new find contact requests
 	}
 	return contacts
@@ -97,7 +95,7 @@ func (network *Network) handleConnection(conn net.Conn) {
 		case bytes.Equal(buff, findReqHead):
 			findRequest := readFindNodeRequest(buf[3:n])
 			// Get NodeID as string and convert it to type KademliaID
-			var id = NewKademliaID(findRequest.NodeId)
+			var id = NewKademliaID(findRequest.Contact.NodeId)
 			// List of k closest contacts to the target
 			var contacts = network.Node.Table.FindClosestContacts(id, network.Node.K)
 			// List of IDs to the k closest contacts
@@ -106,12 +104,13 @@ func (network *Network) handleConnection(conn net.Conn) {
 				ids[i] = contacts[i].ID.String()
 			}
 			// Send response with address of sender and list of IDs
-			sendFindNodeResponse(findRequest.GetSender(), network.Node.Me.Address, ids)
+			sendFindNodeResponse(findRequest.GetSender(), network.Node.Me.Address, contacts)
 			fmt.Print(findRequest)
 		case bytes.Equal(buff, findNodeResHead):
 			findNodeResponse := readFindNodeResponse(buf[3:n])
 			// TODO: Return value or list of contacts??
-			network.findNodeRespCh <- findNodeResponse.Ids
+			var contacts = formatContactsForReading(findNodeResponse.Ids)
+			network.findNodeRespCh <- contacts
 
 			fmt.Print(findNodeResponse)
 		case bytes.Equal(buff, findValueResHead):
@@ -155,10 +154,11 @@ func sendPingResponse(destination string, sender string) {
 	sendData(destination, dataToSend, pingResHead)
 }
 
-func sendFindNodeResponse(destination string, sender string, ids []string) {
+
+func sendFindNodeResponse(destination string, sender string, ids []Contact) {
 	res := &kademlia.FindNodeResponse{
 		Sender: sender,
-		Ids: ids,
+		Ids: formatContactsForSending2(ids),
 	}
 	dataToSend, err := proto.Marshal(res)
 	if err != nil {
@@ -211,10 +211,10 @@ func (network *Network) SendPingRequest(destination string, sender string) {
 }
 
 // TODO: Send along target ID
-func (network *Network) SendFindContactRequest(contact *Contact, kademliaObj Kademlia, targetID *KademliaID) {
+func (network *Network) SendFindContactRequest(contact Contact, kademliaObj Kademlia, targetID *KademliaID) {
 	res := &kademlia.FindNodeRequest{
 		Sender:		kademliaObj.Me.Address,
-		NodeId:		kademliaObj.Me.ID.String(),
+		Contact: 	formatContactForSending(contact),
 	}
 	dataToSend, err := proto.Marshal(res)
 	if err != nil {
@@ -316,4 +316,39 @@ func readFindValueResponse(message []byte) *kademlia.FindValueResponse {
 		log.Fatal("Unmarshalling error ", err)
 	}
 	return res
+}
+
+
+
+
+func formatContactsForSending(contacts []*Contact) []*kademlia.Contact{
+	var sendingContacts []*kademlia.Contact
+	for _, contact := range contacts {
+		sendingContacts = append(sendingContacts, &kademlia.Contact{NodeId:contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()})
+	}
+	return sendingContacts
+}
+
+func formatContactsForSending2(contacts []Contact) []*kademlia.Contact{
+	var sendingContacts []*kademlia.Contact
+	for _, contact := range contacts {
+		sendingContacts = append(sendingContacts, &kademlia.Contact{NodeId:contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()})
+	}
+	return sendingContacts
+}
+
+func formatContactForSending(contact Contact) *kademlia.Contact{
+	return &kademlia.Contact{NodeId:contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()}
+}
+
+func formatContactsForReading(contacts []*kademlia.Contact) []Contact{
+	var readContacts []Contact
+	for _, contact := range contacts {
+		readContacts = append(readContacts, Contact{ID:NewKademliaID(contact.NodeId), Address:contact.Address, Distance:NewKademliaID(contact.Distance)})
+	}
+	return readContacts
+}
+
+func formatContactForReading(contact kademlia.Contact) Contact{
+	return Contact{ID:NewKademliaID(contact.NodeId), Address:contact.Address, Distance:NewKademliaID(contact.Distance)}
 }
