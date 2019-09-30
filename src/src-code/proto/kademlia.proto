@@ -30,12 +30,12 @@ message StoreResponse {
 
 message FindNodeRequest {
     string sender = 1;
-    Contact contact = 2;
+    string nodeID = 2;
 }
 
 message FindValueRequest {
     string sender = 1;
-    Contact contact = 2;
+    string key = 2;
 }
 
 message FindNodeResponse {

@@ -59,7 +59,7 @@ func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact) {
 
 	for i := 0; i < alpha; i++ {
 		var contact = closest[i]
-		network.SendFindContactRequest(&contact, network.Node, id)
+		network.SendFindContactRequest(contact, network.Node, id)
 		receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
 	}
 
@@ -75,7 +75,7 @@ func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact) {
 		// TODO: Send new find contact requests
 		for i := 0; i < alpha; i++ {
 			var contact = shortList[i]
-			network.SendFindContactRequest(&contact, network.Node, id)
+			network.SendFindContactRequest(contact, network.Node, id)
 			receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
 		}
 	}
@@ -222,7 +222,7 @@ func (network *Network) SendPingRequest(destination string, sender string) {
 func (network *Network) SendFindContactRequest(contact Contact, kademliaObj Kademlia, targetID *KademliaID) {
 	res := &kademlia.FindNodeRequest{
 		Sender:		kademliaObj.Me.Address,
-		Contact: 	formatContactForSending(contact),
+		NodeID: 	targetID.String(),
 	}
 	dataToSend, err := proto.Marshal(res)
 	if err != nil {
