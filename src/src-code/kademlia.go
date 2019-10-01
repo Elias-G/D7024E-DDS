@@ -28,7 +28,6 @@ func (kademlia *Kademlia) Store(key string, value []byte) {
 }
 
 func (kademlia *Kademlia) Ping(network Network, destination string, sender string) {
-	// TODO
 	var found = false
 	timer := time.AfterFunc(time.Second * 5, func() {
 		if found == false {
