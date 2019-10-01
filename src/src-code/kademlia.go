@@ -18,9 +18,20 @@ func (kademlia *Kademlia) LookupContact(target *Contact) {
 	// TODO
 }
 
-func (kademlia *Kademlia) LookupData(hash string) string{
+func (kademlia *Kademlia) FindValueRequest(originalSender string,hash string) string{
 	// TODO returns data, if fails then it returns a list of adresses to send lookup to
-	fmt.Print(hash)
+	val, ok := kademlia.HashTable[hash]
+	if ok {
+		// Return the data
+		fmt.Print(" successful lookup val: " + string(val) + " hash: " + hash )
+		return string(val)
+	} else {
+		return ""
+	}
+}
+
+func (kademlia *Kademlia) LookupData(network Network,originalSender string, hash string) string{
+	// TODO returns data, if fails then it returns a list of adresses to send lookup to
 	val, ok := kademlia.HashTable[hash]
 	if ok {
 		// Return the data
@@ -28,9 +39,9 @@ func (kademlia *Kademlia) LookupData(hash string) string{
 		return string(val)
 	} else {
 		// Make RPC calls to the alpha nodes with the closest hashes in the routingtable
-		//KadNetwork.
-		//netsrc.SendPingRequest("10.0.0.3:5000", kademlia.Me.Address)
-		fmt.Print(" fail hash: " + hash + "\n")
+		fmt.Print(" fail hash: " + hash + "\n sending rpc \n")
+		contacts := kademlia.LookupDataRoutingTable(hash)
+		go network.SendFindValueRequest(originalSender , &contacts[0], hash)
 		return ""
 	}
 }

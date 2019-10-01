@@ -146,21 +146,8 @@ func parse(node *src.Kademlia, input []string, kadnet src.Network) {
 	case "get":
 		//hash := input[1]
 		hash := "aaaaaaaaadaaaaaaaaadaaaaaaaaadaaaaaaaaad"
-		data  := node.LookupData(hash)
-		if data == "" {
-			contacts := node.LookupDataRoutingTable(hash)
-			fmt.Print(len(contacts))
-			if len(contacts) == 0{
-				fmt.Print("we found no contacts...?")	
-			}else{
-				go kadnet.SendFindValueRequest(*node,&contacts[0], hash)
-			}
-			//go kadnet.SendFindValueRequest(contacts[1])
-			//go kadnet.SendFindValueRequest(contacts[2])
-
-		}else{
-			fmt.Print(data)
-		}
+		data  := node.LookupData(kadnet,node.Me.Address, hash)
+		fmt.Print(data)
 
 	case "store":
 		val := input[1]
@@ -173,7 +160,7 @@ func parse(node *src.Kademlia, input []string, kadnet src.Network) {
 	case "RTsize":
 		hash := input[1]
 		contacts := node.LookupDataRoutingTable(hash)
-		fmt.Print(len(contacts))
+		fmt.Print(contacts)
 	default:
 		fmt.Print("Try again")
 	}
