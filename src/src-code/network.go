@@ -66,37 +66,43 @@ func printContacts (contacts []Contact) {
 	}
 }
 
+func printContact (contact Contact) {
+	fmt.Printf("ID: " + contact.ID.String() + " IP: " + contact.Address + "\n")
+}
+
 // Sends out alpha RPCs for FindNode and gets k contacts from each
 func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact) {
 	var table = network.Node.Table
 	var alpha = network.Node.Alpha
 	var closest = table.FindClosestContacts(id, alpha)
 
+	//PRINTOUTS////////////////
 	fmt.Printf("CLOSEST: \n")
 	printContacts(closest)
-
+	//PRINTOUTS////////////////
 
 	var closestSoFar = closest[0].ID
 	var receivedContacts []Contact
 
-	for i := 0; i < alpha; i++ {
+	for i := 0; i < alpha; i++ { //todo: parallelism
 		var contact = closest[i]
-		fmt.Printf("BEFORE REQUEST \n")
 		network.SendFindNodeRequest(contact.Address, network.Node.Me.ID.String(), network.Node.Me) //send to one of the closest contacts: destination, target id, sender
-		received := <-network.findNodeRespCh
-		fmt.Printf("After REQUEST \nLEN: ")
+		received := <-network.findNodeRespCh //todo: timeout
 		fmt.Printf(string(len(received)))
 		receivedContacts = append(receivedContacts, received...)
 	}
 
 	//PRINTOUTS////////////////
 	fmt.Printf("RECIEVEDCONTACTS: \n")
-	for _, contact := range receivedContacts {
-		fmt.Printf("ID: " + contact.ID.String() + " IP: " + contact.Address + " Distance: " + contact.Distance.String() + "\n")
-	}
+	printContacts(receivedContacts)
 
 	fmt.Printf("\n")
 	//PRINTOUTS////////////
+
+	//Add all received contacts
+	for _, contact := range receivedContacts {
+		network.Node.Table.AddContact(contact)
+	}
 
 	// Sort received list of contacts
 	candidates := ShortList{id, receivedContacts}
@@ -105,36 +111,30 @@ func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact) {
 
 	//PRINTOUTS////////////////
 	fmt.Printf("CANDIDATES: \n")
-	for _, contact := range candidates.Contacts {
-		fmt.Printf("ID: " + contact.ID.String() + " IP: " + contact.Address + " Distance: " + contact.Distance.String() + "\n")
-	}
-
+	printContacts(candidates.Contacts)
 	fmt.Printf("\n")
-
 	fmt.Printf("SHORTLIST: \n")
-	for _, contact := range shortList {
-		fmt.Printf("ID: " + contact.ID.String() + " IP: " + contact.Address + " Distance: " + contact.Distance.String() + "\n")
-	}
+	printContacts(shortList)
 	//PRINTOUTS////////////
 
 	// While target ID is not yet found and recent responses are closer than the previous closest,
 	// Send new find contact requests
 	for !shortList[0].ID.Equals(id) && shortList[0].ID.CalcDistance(id).Less(closestSoFar.CalcDistance(id)) {
 		closestSoFar = shortList[0].ID
-		// TODO: Send new find contact requests
 		for i := 0; i < alpha; i++ {
 			var contact = shortList[i]
-			fmt.Printf("BEFORE REQUEST \n")
 			network.SendFindNodeRequest(contact.Address, id.String(), network.Node.Me)
-			received := <-network.findNodeRespCh
-			fmt.Printf("After REQUEST \nLEN: ")
+			received := <-network.findNodeRespCh //todo: timeout on request if node is dead, as ping in kademlia.go
 			fmt.Printf(string(len(received)))
 			receivedContacts = append(receivedContacts, received...)
 		}
 	}
-	for _, contact := range contacts {
-		fmt.Printf("ID: " + contact.ID.String() + " IP: " + contact.Address + " Distance: " + contact.Distance.String() + "\n")
-	}
+
+	//PRINTOUTS////////////////
+	fmt.Printf("Returning: \n")
+	printContacts(contacts)
+	//PRINTOUTS////////////////
+
 	return contacts
 }
 
@@ -162,17 +162,22 @@ func (network *Network) handleConnection(conn net.Conn) {
 			findRequest := readFindNodeRequest(buf[3:n])
 			// Get NodeID as string and convert it to type KademliaID
 			var targetID = NewKademliaID(findRequest.TargetId)
+
+
+
+			//Add to routing table, if it already exists it will be moved to front of bucket by add
+			var newContact = Contact{Address:findRequest.GetSender().Address, ID:NewKademliaID(findRequest.GetSender().NodeId)}
+			newContact.CalcDistance(network.Node.Me.ID)
+
+			fmt.Printf("\nADD TO BUCKET\n")
+			printContact(newContact)
+
+			network.Node.Table.AddContact(newContact)
+
 			// List of k closest contacts to the target
 			var contacts = network.Node.Table.FindClosestContacts(targetID, network.Node.K)
 
-			if len(contacts)==0 {
-				var newContact = Contact{Address:findRequest.GetSender().Address, ID:NewKademliaID(findRequest.GetSender().NodeId)}
-				newContact.CalcDistance(network.Node.Me.ID)
-				network.Node.Table.AddContact(newContact)
-				contacts = append(contacts, newContact)
-			}
-
-				fmt.Printf("CONTACTS")
+			fmt.Printf("CONTACTS")
 			if len(contacts)>0 {
 				fmt.Printf(" NOT EMPTY ")
 			} else {

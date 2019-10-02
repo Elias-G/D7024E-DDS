@@ -18,7 +18,7 @@ func newBucket() *bucket {
 }
 
 func (bucket *bucket) RemoveContact(contact Contact) {
-
+	//todo: remove if it exists
 }
 
 

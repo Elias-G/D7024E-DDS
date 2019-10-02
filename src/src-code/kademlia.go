@@ -31,7 +31,7 @@ func (kademlia *Kademlia) Ping(network Network, destination string, sender strin
 	var found = false
 	timer := time.AfterFunc(time.Second * 5, func() {
 		if found == false {
-			//todo: remove from bucket
+			//network.Node.Table.RemoveContact(sender)//todo: implement remove from bucket and make sender a contact
 			//find node contact in bucket and remove it
 			fmt.Printf("Could not ping node \n")
 			return
@@ -43,6 +43,6 @@ func (kademlia *Kademlia) Ping(network Network, destination string, sender strin
 	found=true
 	timer.Stop()
 	fmt.Printf("Response: " + response.GetResponse() + " from sender: " + response.GetSender() + "\n")
-	//todo: move to front of bucket
+	//network.Node.Table.AddContact(sender) //todo: make sender to contact, to add to front of bucket
 	//find node contact in bucket and add it to front
 }
