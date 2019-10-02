@@ -17,6 +17,11 @@ func newBucket() *bucket {
 	return bucket
 }
 
+func (bucket *bucket) RemoveContact(contact Contact) {
+	//todo: remove if it exists
+}
+
+
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
 func (bucket *bucket) AddContact(contact Contact) {

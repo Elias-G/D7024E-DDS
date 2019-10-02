@@ -8,12 +8,14 @@ import (
 	"net"
 	"os"
 	src "src-code"
+	kademlia2 "src-code/proto"
 	"strconv"
 	"strings"
 )
 
 var k = 20
 var alpha = 3
+var rootId = src.NewKademliaID("0fda68927f2b2ff836f73578db0fa54c29f7fd92")
 
 func main() {
 	arg := os.Args[1]
@@ -30,8 +32,9 @@ func main() {
 	//If arg==1 then its the rootnode that is suppose to start
 	if arg == "1" {
 		var ip = getIpAddress()
-		log.Printf("IP: " + ip)
-		var me = createNode(5000, ip)
+		var me = createNode(5000, ip, rootId)
+		me.CalcDistance(me.ID)
+		log.Printf("IP: " + ip + " kademlia id: " + me.ID.String())
 		var table = src.NewRoutingTable(me)
 
 		var kademlia = &src.Kademlia{
@@ -40,9 +43,10 @@ func main() {
 			K:         k,
 			Alpha:     1,
 			HashTable: hashTable,
+			PingWait:  20000000000,
 		}
 
-		kadnet := *src.NewNetwork(*kademlia)
+		kadnet := *src.NewNetwork(*kademlia, make(chan *kademlia2.PingResponse), make(chan []src.Contact))
 
 		print(kademlia)
 
@@ -51,11 +55,14 @@ func main() {
 		//if arg == 2 then its a normal node to start
 	} else if arg == "2" {
 		var ip = getIpAddress()
-		log.Printf("IP: " + ip)
 
-		var rootNode = createNode(5000, "10.0.0.3")
+		var rootNode = createNode(5000, "10.0.0.3", rootId)
+		var me = createNode(5000, ip, src.NewRandomKademliaID())
+		me.CalcDistance(me.ID)
+		rootNode.CalcDistance(me.ID)
 
-		var me = createNode(5000, ip)
+
+		log.Printf("IP: " + ip + " kademlia id: " + me.ID.String())
 		table := src.NewRoutingTable(me)
 
 		var kademlia = &src.Kademlia{
@@ -66,12 +73,13 @@ func main() {
 			HashTable: hashTable,
 		}
 
-		kadnet := *src.NewNetwork(*kademlia)
+		kadnet := *src.NewNetwork(*kademlia, make(chan *kademlia2.PingResponse), make(chan []src.Contact))
 
-		src.NetworkJoin(*kademlia, rootNode)
-		print(kademlia)
-		//net.SendPingRequest(&rootNode, *kademlia)
 		go kadnet.Listen(me.Address)
+
+		kadnet.NetworkJoin(*kademlia, rootNode)
+
+
 		clilisten(ip, kadnet, *kademlia)
 	} else {
 		fmt.Print("Choose to be a leader(1) or a follower(2)")
@@ -108,12 +116,12 @@ func getIpAddress() string {
 	return ""
 }
 
-func createNode(port int, ip string) src.Contact {
-	id := src.NewRandomKademliaID()
+func createNode(port int, ip string, id *src.KademliaID) src.Contact {
 	address := ip + ":" + strconv.Itoa(port)
 	me := src.NewContact(id, address)
 	return me
 }
+
 
 func clilisten(ip string, kadnet src.Network, kademlia src.Kademlia) {
 	cmd := ""
@@ -136,11 +144,22 @@ func parse(ip string, input []string, kadnet src.Network, kademlia src.Kademlia)
 	case "h":
 		fmt.Print("This is help")
 	case "ping":
-		if(len(input)>2){
+		fmt.Printf("PINGING!")
+		if len(input)>2 {
 			sender := ip + ":" + input[2]
 			dest := input[1] + ":" + input[2]
-			//go kadnet.SendPingRequest(dest,sender)
 			go (*src.Kademlia).Ping(&kademlia, kadnet, dest, sender)
+		}
+	case "nodelookup":
+		if len(input)>1 {
+			kademliaId := input[1]
+			go kadnet.NodeLookup(src.NewKademliaID(kademliaId))
+		}
+	case "routingtable":
+		var contacts = kademlia.Table.FindClosestContacts(kademlia.Me.ID, 20)
+		fmt.Print(len(contacts))
+		for _, contact := range contacts {
+			fmt.Printf("Address: " + contact.Address + "\n")
 		}
 	default:
 		fmt.Print("Try again")
