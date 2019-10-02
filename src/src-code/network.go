@@ -60,6 +60,7 @@ func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact, value str
 	var receivedContacts = closest // latest received list of contacts
 	var shortList []Contact // k closest contacts to target
 	var probed = 0 // nr of probed nodes
+	value = ""
 
 	for i := 0; i < alpha; i++ {
 		var contact = closest[i]
@@ -97,8 +98,7 @@ func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact, value str
 		shortList = sortContacts(id, receivedContacts, k)
 	}
 
-	contacts = shortList
-	return contacts, ""
+	return contacts, value
 }
 
 // Sort received list of contacts and return k closest to target
