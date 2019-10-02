@@ -1,216 +1,56 @@
 package src
 
 import (
-	"net"
+	"D7024E-DDS/proto"
+	"encoding/hex"
 	"reflect"
-	"src-code/proto"
 	"testing"
 )
 
+func generateContacts(nrOfContacts int, id *KademliaID)(contacts []Contact) {
+	for i := 0; i < nrOfContacts; i++ {
+		contact := NewContact(NewRandomKademliaID(), "Address" + string(i))
+		contact.CalcDistance(id)
+		contacts = append(contacts, contact)
+	}
+	return contacts
+}
+
+func generateContactsForSending(nrOfContacts int, id *KademliaID)(contacts []*Contact) {
+	for i := 0; i < nrOfContacts; i++ {
+		contact := NewContact(NewRandomKademliaID(), "Address" + string(i))
+		contact.CalcDistance(id)
+		contacts = append(contacts, &contact)
+	}
+	return contacts
+}
+
+func generateContactsForSending2(nrOfContacts int, id *KademliaID)(contacts []Contact) {
+	for i := 0; i < nrOfContacts; i++ {
+		contact := NewContact(NewRandomKademliaID(), "Address" + string(i))
+		contact.CalcDistance(id)
+		contacts = append(contacts, contact)
+	}
+	return contacts
+}
+
+func generateContactsForReading(nrOfContacts int, id *KademliaID)(contacts []*kademlia.Contact) {
+	for i := 0; i < nrOfContacts; i++ {
+		contact := NewContact(NewRandomKademliaID(), "Address" + string(i))
+		contact.CalcDistance(id)
+		newContact := &kademlia.Contact{NodeId: contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()}
+		contacts = append(contacts, newContact)
+	}
+	return contacts
+}
+
+func generateMessage()(message []byte) {
+	message,_ = hex.DecodeString("MessageToByte")
+	return message
+}
+
 func TestNetworkJoin(t *testing.T) {
-	type args struct {
-		node     Kademlia
-		rootNode Contact
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-		})
-	}
-}
 
-func TestNetwork_Listen(t *testing.T) {
-	type fields struct {
-		Node           Kademlia
-		findNodeRespCh chan [] Contact
-	}
-	type args struct {
-		address string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			network := &Network{
-				Node:           tt.fields.Node,
-				findNodeRespCh: tt.fields.findNodeRespCh,
-			}
-		})
-	}
-}
-
-func TestNetwork_NodeLookup(t *testing.T) {
-	type fields struct {
-		Node           Kademlia
-		findNodeRespCh chan [] Contact
-	}
-	type args struct {
-		id *KademliaID
-	}
-	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		wantContacts []Contact
-		wantValue    string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			network := &Network{
-				Node:           tt.fields.Node,
-				findNodeRespCh: tt.fields.findNodeRespCh,
-			}
-			gotContacts, gotValue := network.NodeLookup(tt.args.id)
-			if !reflect.DeepEqual(gotContacts, tt.wantContacts) {
-				t.Errorf("NodeLookup() gotContacts = %v, want %v", gotContacts, tt.wantContacts)
-			}
-			if gotValue != tt.wantValue {
-				t.Errorf("NodeLookup() gotValue = %v, want %v", gotValue, tt.wantValue)
-			}
-		})
-	}
-}
-
-func TestNetwork_SendFindContactRequest(t *testing.T) {
-	type fields struct {
-		Node           Kademlia
-		findNodeRespCh chan [] Contact
-	}
-	type args struct {
-		contact     Contact
-		kademliaObj Kademlia
-		targetID    *KademliaID
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			network := &Network{
-				Node:           tt.fields.Node,
-				findNodeRespCh: tt.fields.findNodeRespCh,
-			}
-		})
-	}
-}
-
-func TestNetwork_SendFindDataRequest(t *testing.T) {
-	type fields struct {
-		Node           Kademlia
-		findNodeRespCh chan [] Contact
-	}
-	type args struct {
-		hash string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			network := &Network{
-				Node:           tt.fields.Node,
-				findNodeRespCh: tt.fields.findNodeRespCh,
-			}
-		})
-	}
-}
-
-func TestNetwork_SendPingRequest(t *testing.T) {
-	type fields struct {
-		Node           Kademlia
-		findNodeRespCh chan [] Contact
-	}
-	type args struct {
-		destination string
-		sender      string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			network := &Network{
-				Node:           tt.fields.Node,
-				findNodeRespCh: tt.fields.findNodeRespCh,
-			}
-		})
-	}
-}
-
-func TestNetwork_SendStoreRequest(t *testing.T) {
-	type fields struct {
-		Node           Kademlia
-		findNodeRespCh chan [] Contact
-	}
-	type args struct {
-		contact     *Contact
-		kademliaObj Kademlia
-		data        []byte
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			network := &Network{
-				Node:           tt.fields.Node,
-				findNodeRespCh: tt.fields.findNodeRespCh,
-			}
-		})
-	}
-}
-
-func TestNetwork_handleConnection(t *testing.T) {
-	type fields struct {
-		Node           Kademlia
-		findNodeRespCh chan [] Contact
-	}
-	type args struct {
-		conn net.Conn
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			network := &Network{
-				Node:           tt.fields.Node,
-				findNodeRespCh: tt.fields.findNodeRespCh,
-			}
-		})
-	}
 }
 
 func TestNewNetwork(t *testing.T) {
@@ -233,243 +73,130 @@ func TestNewNetwork(t *testing.T) {
 	}
 }
 
-func Test_formatContactForReading(t *testing.T) {
-	type args struct {
-		contact kademlia.Contact
-	}
-	tests := []struct {
-		name string
-		args args
-		want Contact
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := formatContactForReading(tt.args.contact); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("formatContactForReading() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_formatContactForSending(t *testing.T) {
-	type args struct {
-		contact Contact
-	}
-	tests := []struct {
-		name string
-		args args
-		want *kademlia.Contact
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := formatContactForSending(tt.args.contact); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("formatContactForSending() = %v, want %v", got, tt.want)
-			}
-		})
+	contact := NewContact(NewRandomKademliaID(), "Address")
+	id := NewRandomKademliaID()
+	contact.CalcDistance(id)
+
+	var i interface{} = formatContactForSending(contact)
+
+	_, ok := i.(*kademlia.Contact)
+	if !ok {
+		t.Errorf("formatContactForSending: Conversion failed")
 	}
 }
 
 func Test_formatContactsForReading(t *testing.T) {
-	type args struct {
-		contacts []*kademlia.Contact
-	}
-	tests := []struct {
-		name string
-		args args
-		want []Contact
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := formatContactsForReading(tt.args.contacts); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("formatContactsForReading() = %v, want %v", got, tt.want)
-			}
-		})
+	const nrOfContacts = 10
+	id := NewRandomKademliaID()
+	contacts := generateContactsForReading(nrOfContacts, id)
+
+	var i interface{} = formatContactsForReading(contacts)
+
+	_, ok := i.([]Contact)
+	if !ok {
+		t.Errorf("formatContactsForReading: Conversion failed")
 	}
 }
 
 func Test_formatContactsForSending(t *testing.T) {
-	type args struct {
-		contacts []*Contact
-	}
-	tests := []struct {
-		name string
-		args args
-		want []*kademlia.Contact
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := formatContactsForSending(tt.args.contacts); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("formatContactsForSending() = %v, want %v", got, tt.want)
-			}
-		})
+	const nrOfContacts = 10
+	id := NewRandomKademliaID()
+	contacts := generateContactsForSending(nrOfContacts, id)
+	var i interface{} = formatContactsForSending(contacts)
+
+	_, ok := i.([]*kademlia.Contact)
+	if !ok {
+		t.Errorf("formatContactsForSending: Conversion failed")
 	}
 }
 
 func Test_formatContactsForSending2(t *testing.T) {
-	type args struct {
-		contacts []Contact
-	}
-	tests := []struct {
-		name string
-		args args
-		want []*kademlia.Contact
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := formatContactsForSending2(tt.args.contacts); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("formatContactsForSending2() = %v, want %v", got, tt.want)
-			}
-		})
+	const nrOfContacts = 10
+	id := NewRandomKademliaID()
+	contacts := generateContactsForSending2(nrOfContacts, id)
+	var i interface{} = formatContactsForSending2(contacts)
+
+	_, ok := i.([]*kademlia.Contact)
+	if !ok {
+		t.Errorf("formatContactsForSending2: Conversion failed")
 	}
 }
 
 func Test_readFindNodeRequest(t *testing.T) {
-	type args struct {
-		message []byte
-	}
-	tests := []struct {
-		name string
-		args args
-		want *kademlia.FindNodeRequest
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := readFindNodeRequest(tt.args.message); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("readFindNodeRequest() = %v, want %v", got, tt.want)
-			}
-		})
+	message := generateMessage()
+
+	var i interface{} = readFindNodeRequest(message)
+
+	_, ok := i.(*kademlia.FindNodeRequest)
+	if !ok {
+		t.Errorf("readFindNodeRequest: Read failed")
 	}
 }
 
 func Test_readFindNodeResponse(t *testing.T) {
-	type args struct {
-		message []byte
-	}
-	tests := []struct {
-		name string
-		args args
-		want *kademlia.FindNodeResponse
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := readFindNodeResponse(tt.args.message); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("readFindNodeResponse() = %v, want %v", got, tt.want)
-			}
-		})
+	message := generateMessage()
+
+	var i interface{} = readFindNodeResponse(message)
+
+	_, ok := i.(*kademlia.FindNodeResponse)
+	if !ok {
+		t.Errorf("readFindNodeResponse: Read failed")
 	}
 }
 
 func Test_readFindValueResponse(t *testing.T) {
-	type args struct {
-		message []byte
-	}
-	tests := []struct {
-		name string
-		args args
-		want *kademlia.FindValueResponse
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := readFindValueResponse(tt.args.message); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("readFindValueResponse() = %v, want %v", got, tt.want)
-			}
-		})
+	message := generateMessage()
+
+	var i interface{} = readFindValueResponse(message)
+
+	_, ok := i.(*kademlia.FindValueResponse)
+	if !ok {
+		t.Errorf("readFindValueResponse: Read failed")
 	}
 }
 
 func Test_readPingRequest(t *testing.T) {
-	type args struct {
-		message []byte
-	}
-	tests := []struct {
-		name string
-		args args
-		want *kademlia.PingRequest
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := readPingRequest(tt.args.message); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("readPingRequest() = %v, want %v", got, tt.want)
-			}
-		})
+	message := generateMessage()
+
+	var i interface{} = readPingRequest(message)
+
+	_, ok := i.(*kademlia.PingRequest)
+	if !ok {
+		t.Errorf("readPingRequest: Read failed")
 	}
 }
 
 func Test_readPingResponse(t *testing.T) {
-	type args struct {
-		message []byte
-	}
-	tests := []struct {
-		name string
-		args args
-		want *kademlia.PingResponse
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := readPingResponse(tt.args.message); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("readPingResponse() = %v, want %v", got, tt.want)
-			}
-		})
+	message := generateMessage()
+
+	var i interface{} = readPingResponse(message)
+
+	_, ok := i.(*kademlia.PingResponse)
+	if !ok {
+		t.Errorf("readPingResponse: Read failed")
 	}
 }
 
 func Test_readStoreRequest(t *testing.T) {
-	type args struct {
-		message []byte
-	}
-	tests := []struct {
-		name string
-		args args
-		want *kademlia.StoreRequest
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := readStoreRequest(tt.args.message); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("readStoreRequest() = %v, want %v", got, tt.want)
-			}
-		})
+	message := generateMessage()
+
+	var i interface{} = readStoreRequest(message)
+
+	_, ok := i.(*kademlia.StoreRequest)
+	if !ok {
+		t.Errorf("readStoreRequest: Read failed")
 	}
 }
 
 func Test_readStoreResponse(t *testing.T) {
-	type args struct {
-		message []byte
-	}
-	tests := []struct {
-		name string
-		args args
-		want *kademlia.StoreResponse
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := readStoreResponse(tt.args.message); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("readStoreResponse() = %v, want %v", got, tt.want)
-			}
-		})
+	message := generateMessage()
+
+	var i interface{} = readStoreResponse(message)
+
+	_, ok := i.(*kademlia.StoreResponse)
+	if !ok {
+		t.Errorf("readStoreResponse: Read failed")
 	}
 }
 
@@ -563,23 +290,21 @@ func Test_sendStoreResponse(t *testing.T) {
 }
 
 func Test_sortContacts(t *testing.T) {
-	type args struct {
-		id       *KademliaID
-		unsorted []Contact
-		k        int
+	const nrOfContacts = 10
+	const k = 8
+	id := NewRandomKademliaID()
+	contacts := generateContacts(nrOfContacts, id)
+
+	got := sortContacts(id, contacts, k)
+
+	var i interface{} = got
+
+	_, ok := i.([]Contact)
+	if !ok {
+		t.Errorf("sortContacts: Did not return type []Contact")
 	}
-	tests := []struct {
-		name       string
-		args       args
-		wantSorted []Contact
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotSorted := sortContacts(tt.args.id, tt.args.unsorted, tt.args.k); !reflect.DeepEqual(gotSorted, tt.wantSorted) {
-				t.Errorf("sortContacts() = %v, want %v", gotSorted, tt.wantSorted)
-			}
-		})
+
+	if len(got) != k {
+		t.Errorf("sortContacts: Did not return k contacts")
 	}
 }

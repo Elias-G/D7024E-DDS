@@ -1,12 +1,12 @@
 package src
 
 import (
+	kademlia "D7024E-DDS/proto"
 	"bytes"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"log"
 	"net"
-	kademlia "src-code/proto"
 )
 
 type Network struct {
@@ -49,56 +49,63 @@ func NetworkJoin(node Kademlia, rootNode Contact) {
 	table.FindClosestContacts(node.Me.ID, alpha)
 }
 
-// Sends out alpha RPCs for FindNode and gets k contacts from each
-func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact) {
+// Sends out alpha RPCs for FindNode/FindValue and returns k closest contacts or value if found
+// TODO: Parallel requests, support for findValue, keep track of nodes already probed? Timing? How to return value or contacts?
+func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact, value string) {
 	var table = network.Node.Table
 	var alpha = network.Node.Alpha
-	var closest = table.FindClosestContacts(id, alpha)
-	var closestSoFar = closest[0].ID
-	var receivedContacts = closest
-	var shortList []Contact
+	var k = network.Node.K
+	var closest = table.FindClosestContacts(id, alpha) // initiating shortList
+	var closestSoFar = closest[0].ID // current closest node to target
+	var receivedContacts = closest // latest received list of contacts
+	var shortList []Contact // k closest contacts to target
+	var probed = 0 // nr of probed nodes
 
 	for i := 0; i < alpha; i++ {
 		var contact = closest[i]
 		network.SendFindContactRequest(contact, network.Node, id)
-		var newContacts []Contact
-		receivedContacts = append(newContacts, <- network.findNodeRespCh...)
+		receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
+		probed++
 	}
+	// Sort contacts received and store k closest in shortList
+	shortList = sortContacts(id, receivedContacts, k)
 
-	shortList = sortContacts(id, receivedContacts)
-
-	// While target ID is not yet found and recent responses are closer than the previous closest,
+	// While recent responses are closer than closestSoFar, and less than k nodes has been successfully probed,
 	// Send new find contact requests
-	for !shortList[0].ID.Equals(id) && shortList[0].ID.CalcDistance(id).Less(closestSoFar.CalcDistance(id)) {
+	for (probed < k) && shortList[0].ID.CalcDistance(id).Less(closestSoFar.CalcDistance(id)) {
 		closestSoFar = shortList[0].ID
+		var newContacts []Contact
+
 		for i := 0; i < alpha; i++ {
 			var contact = shortList[i]
 			network.SendFindContactRequest(contact, network.Node, id)
-			var newContacts []Contact
-			receivedContacts = append(newContacts, <- network.findNodeRespCh...)
+			newContacts = append(newContacts, <- network.findNodeRespCh...)
+			probed++
 		}
-		shortList = sortContacts(id, receivedContacts)
+
+		receivedContacts = newContacts
+		shortList = sortContacts(id, receivedContacts, k)
 	}
 	// If closest node is unchanged, send RPCs to the k closest contacts that are not yet queried
 	if closestSoFar.CalcDistance(id).Less(shortList[0].ID.CalcDistance(id)) {
 		for i := alpha; i < len(receivedContacts); i++ {
-			var contact = receivedContacts[i]
+			// TODO: shortList or contacts?
+			var contact = shortList[i]
 			network.SendFindContactRequest(contact, network.Node, id)
-			var newContacts []Contact
-			receivedContacts = append(newContacts, <- network.findNodeRespCh...)
+			receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
 		}
-		shortList = sortContacts(id, receivedContacts)
+		shortList = sortContacts(id, receivedContacts, k)
 	}
 
-	contacts = receivedContacts
-	return contacts
+	contacts = shortList
+	return contacts, ""
 }
 
-func sortContacts(id *KademliaID, unsorted []Contact)(sorted []Contact) {
-	// Sort received list of contacts
+// Sort received list of contacts and return k closest to target
+func sortContacts(id *KademliaID, unsorted []Contact, k int)(sorted []Contact) {
 	candidates := ShortList{id, unsorted}
 	candidates.Sort()
-	sorted = candidates.Contacts
+	sorted = candidates.Contacts[0:k]
 	return sorted
 }
 
@@ -182,7 +189,6 @@ func sendPingResponse(destination string, sender string) {
 	sendData(destination, dataToSend, pingResHead)
 }
 
-
 func sendFindNodeResponse(destination string, sender string, ids []Contact) {
 	res := &kademlia.FindNodeResponse{
 		Sender: sender,
@@ -238,7 +244,6 @@ func (network *Network) SendPingRequest(destination string, sender string) {
 	sendData(destination, dataToSend, pingReqHead)
 }
 
-// TODO: Send along target ID
 func (network *Network) SendFindContactRequest(contact Contact, kademliaObj Kademlia, targetID *KademliaID) {
 	res := &kademlia.FindNodeRequest{
 		Sender:		kademliaObj.Me.Address,
@@ -346,27 +351,24 @@ func readFindValueResponse(message []byte) *kademlia.FindValueResponse {
 	return res
 }
 
-
-
-
-func formatContactsForSending(contacts []*Contact) []*kademlia.Contact{
+func formatContactsForSending(contacts []*Contact) []*kademlia.Contact {
 	var sendingContacts []*kademlia.Contact
 	for _, contact := range contacts {
-		sendingContacts = append(sendingContacts, &kademlia.Contact{NodeId:contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()})
+		sendingContacts = append(sendingContacts, &kademlia.Contact{NodeId: contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()})
 	}
 	return sendingContacts
 }
 
-func formatContactsForSending2(contacts []Contact) []*kademlia.Contact{
+func formatContactsForSending2(contacts []Contact) []*kademlia.Contact {
 	var sendingContacts []*kademlia.Contact
 	for _, contact := range contacts {
-		sendingContacts = append(sendingContacts, &kademlia.Contact{NodeId:contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()})
+		sendingContacts = append(sendingContacts, &kademlia.Contact{NodeId: contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()})
 	}
 	return sendingContacts
 }
 
-func formatContactForSending(contact Contact) *kademlia.Contact{
-	return &kademlia.Contact{NodeId:contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()}
+func formatContactForSending(contact Contact) *kademlia.Contact {
+	return &kademlia.Contact{NodeId: contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()}
 }
 
 func formatContactsForReading(contacts []*kademlia.Contact) []Contact{
@@ -377,6 +379,3 @@ func formatContactsForReading(contacts []*kademlia.Contact) []Contact{
 	return readContacts
 }
 
-func formatContactForReading(contact kademlia.Contact) Contact{
-	return Contact{ID:NewKademliaID(contact.NodeId), Address:contact.Address, Distance:NewKademliaID(contact.Distance)}
-}

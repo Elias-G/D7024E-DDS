@@ -1,162 +1,44 @@
 package src
 
 import (
-	"reflect"
 	"testing"
 )
 
-func TestShortList_Append(t *testing.T) {
-	type fields struct {
-		Target   *KademliaID
-		Contacts []Contact
-	}
-	type args struct {
-		contacts []Contact
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			candidates := &ShortList{
-				Target:   tt.fields.Target,
-				Contacts: tt.fields.Contacts,
-			}
-		})
-	}
-}
+func generateShortList(nrOfContacts int)(shortList ShortList) {
+	target := NewRandomKademliaID()
+	var contacts []Contact
 
-func TestShortList_GetContacts(t *testing.T) {
-	type fields struct {
-		Target   *KademliaID
-		Contacts []Contact
+	for i := 0; i < nrOfContacts; i++ {
+		add := "Address" + string(i)
+		contacts = append(contacts, NewContact(NewRandomKademliaID(), add))
 	}
-	type args struct {
-		count int
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   []Contact
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			candidates := &ShortList{
-				Target:   tt.fields.Target,
-				Contacts: tt.fields.Contacts,
-			}
-			if got := candidates.GetContacts(tt.args.count); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetContacts() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
-func TestShortList_Len(t *testing.T) {
-	type fields struct {
-		Target   *KademliaID
-		Contacts []Contact
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   int
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			candidates := &ShortList{
-				Target:   tt.fields.Target,
-				Contacts: tt.fields.Contacts,
-			}
-			if got := candidates.Len(); got != tt.want {
-				t.Errorf("Len() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	return ShortList{target, contacts}
 }
 
 func TestShortList_Less(t *testing.T) {
-	type fields struct {
-		Target   *KademliaID
-		Contacts []Contact
-	}
-	type args struct {
-		i int
-		j int
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			candidates := &ShortList{
-				Target:   tt.fields.Target,
-				Contacts: tt.fields.Contacts,
-			}
-			if got := candidates.Less(tt.args.i, tt.args.j); got != tt.want {
-				t.Errorf("Less() = %v, want %v", got, tt.want)
-			}
-		})
+	const nrOfContacts = 10
+	shortList := generateShortList(nrOfContacts)
+
+	dist1 := shortList.Contacts[0].ID.CalcDistance(shortList.Target)
+	dist2 := shortList.Contacts[1].ID.CalcDistance(shortList.Target)
+
+	want := dist1.Less(dist2)
+	got := shortList.Less(0,1)
+
+	if want != got {
+		t.Errorf("Less = %v, want %v", got, want)
 	}
 }
 
 func TestShortList_Sort(t *testing.T) {
-	type fields struct {
-		Target   *KademliaID
-		Contacts []Contact
-	}
-	tests := []struct {
-		name   string
-		fields fields
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			candidates := &ShortList{
-				Target:   tt.fields.Target,
-				Contacts: tt.fields.Contacts,
-			}
-		})
-	}
-}
+	const nrOfContacts = 10
+	shortList := generateShortList(nrOfContacts)
 
-func TestShortList_Swap(t *testing.T) {
-	type fields struct {
-		Target   *KademliaID
-		Contacts []Contact
-	}
-	type args struct {
-		i int
-		j int
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			candidates := &ShortList{
-				Target:   tt.fields.Target,
-				Contacts: tt.fields.Contacts,
-			}
-		})
+	shortList.Sort()
+	for i := 0; i < len(shortList.Contacts)-1; i++ {
+		if !shortList.Less(i, i+1) {
+			t.Errorf("Sort not working")
+		}
 	}
 }

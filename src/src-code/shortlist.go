@@ -7,16 +7,6 @@ type ShortList struct {
 	Contacts []Contact
 }
 
-// Append an array of Contacts to the ContactCandidates
-func (candidates *ShortList) Append(contacts []Contact) {
-	candidates.Contacts = append(candidates.Contacts, contacts...)
-}
-
-// GetContacts returns the first count number of Contacts
-func (candidates *ShortList) GetContacts(count int) []Contact {
-	return candidates.Contacts[:count]
-}
-
 // Sort the Contacts in ContactCandidates
 func (candidates *ShortList) Sort() {
 	sort.Sort(candidates)
