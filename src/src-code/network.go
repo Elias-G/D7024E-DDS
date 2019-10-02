@@ -55,31 +55,51 @@ func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact) {
 	var alpha = network.Node.Alpha
 	var closest = table.FindClosestContacts(id, alpha)
 	var closestSoFar = closest[0].ID
-	var receivedContacts []Contact
+	var receivedContacts = closest
+	var shortList []Contact
 
 	for i := 0; i < alpha; i++ {
 		var contact = closest[i]
 		network.SendFindContactRequest(contact, network.Node, id)
-		receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
+		var newContacts []Contact
+		receivedContacts = append(newContacts, <- network.findNodeRespCh...)
 	}
 
-	// Sort received list of contacts
-	candidates := ShortList{id, receivedContacts}
-	candidates.Sort()
-	var shortList = candidates.Contacts
+	shortList = sortContacts(id, receivedContacts)
 
 	// While target ID is not yet found and recent responses are closer than the previous closest,
 	// Send new find contact requests
 	for !shortList[0].ID.Equals(id) && shortList[0].ID.CalcDistance(id).Less(closestSoFar.CalcDistance(id)) {
 		closestSoFar = shortList[0].ID
-		// TODO: Send new find contact requests
 		for i := 0; i < alpha; i++ {
 			var contact = shortList[i]
 			network.SendFindContactRequest(contact, network.Node, id)
-			receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
+			var newContacts []Contact
+			receivedContacts = append(newContacts, <- network.findNodeRespCh...)
 		}
+		shortList = sortContacts(id, receivedContacts)
 	}
+	// If closest node is unchanged, send RPCs to the k closest contacts that are not yet queried
+	if closestSoFar.CalcDistance(id).Less(shortList[0].ID.CalcDistance(id)) {
+		for i := alpha; i < len(receivedContacts); i++ {
+			var contact = receivedContacts[i]
+			network.SendFindContactRequest(contact, network.Node, id)
+			var newContacts []Contact
+			receivedContacts = append(newContacts, <- network.findNodeRespCh...)
+		}
+		shortList = sortContacts(id, receivedContacts)
+	}
+
+	contacts = receivedContacts
 	return contacts
+}
+
+func sortContacts(id *KademliaID, unsorted []Contact)(sorted []Contact) {
+	// Sort received list of contacts
+	candidates := ShortList{id, unsorted}
+	candidates.Sort()
+	sorted = candidates.Contacts
+	return sorted
 }
 
 func (network *Network) handleConnection(conn net.Conn) {
@@ -103,7 +123,7 @@ func (network *Network) handleConnection(conn net.Conn) {
 		case bytes.Equal(buff, findReqHead):
 			findRequest := readFindNodeRequest(buf[3:n])
 			// Get NodeID as string and convert it to type KademliaID
-			var id = NewKademliaID(findRequest.Contact.NodeId)
+			var id = NewKademliaID(findRequest.NodeID)
 			// List of k closest contacts to the target
 			var contacts = network.Node.Table.FindClosestContacts(id, network.Node.K)
 			// List of IDs to the k closest contacts
