@@ -2,10 +2,10 @@ syntax = "proto3";
 
 
 service Kademlia {
-  rpc Ping (PingRequest) returns (PingResponse);
-  rpc Store (StoreRequest) returns (StoreResponse);
-  rpc FindNode (FindNodeRequest) returns (FindNodeResponse);
-  rpc FindValue (FindNodeRequest) returns (FindValueResponse);
+    rpc Ping (PingRequest) returns (PingResponse);
+    rpc Store (StoreRequest) returns (StoreResponse);
+    rpc FindNode (FindNodeRequest) returns (FindNodeResponse);
+    rpc FindValue (FindNodeRequest) returns (FindValueResponse);
 }
 
 message PingRequest {

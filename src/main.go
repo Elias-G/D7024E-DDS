@@ -8,7 +8,7 @@ import (
 	"net"
 	"os"
 	src "src-code"
-	kademlia2 "src-code/proto"
+	kademlia2 "proto"
 	"strconv"
 	"strings"
 )

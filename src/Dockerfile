@@ -4,7 +4,7 @@ EXPOSE 5000
 ADD . /go/src/
 RUN go get github.com/golang/protobuf/proto
 RUN go install src-code
-RUN go install src-code/proto
+RUN go install proto
 WORKDIR /go/src/
 RUN go build -o main .
 CMD ["/go/src/main", "2"]
