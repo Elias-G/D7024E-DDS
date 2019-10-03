@@ -1,269 +1,54 @@
 package src
 
 import (
-	kademlia "proto"
 	"bytes"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"log"
 	"net"
+	kademliaProto "proto"
 )
 
 type Network struct {
 	Node Kademlia
-	pingRespCh chan *kademlia.PingResponse
-	findNodeRespCh chan []Contact
+	//Channels for responses
+	PingChannels map[string]chan kademliaProto.PingResponse
+	FindNodeChannels map[string]chan kademliaProto.FindNodeResponse
+	FindValueChannels map[string]chan kademliaProto.FindValueResponse
+	StoreChannels map[string]chan kademliaProto.StoreResponse
 }
 
+//Headers for the switch in handleConnection
 var pingReqHead = []byte{0, 0, 0}
 var pingResHead = []byte{0, 0, 1}
-var findReqHead = []byte{0, 1, 0}
-var findNodeResHead = []byte{0, 1, 1}
-var findValueResHead = []byte{1, 0, 0}
-var storeReqHead = []byte{1, 0, 1}
+var findNodeReqHead = []byte{0, 1, 0}
+var findValueReqHead = []byte{0, 1, 1}
+var findNodeResHead = []byte{1, 0, 1}
+var findValueResHead = []byte{1, 1, 0}
+var storeReqHead = []byte{1, 0, 0}
 var storeResHead = []byte{1, 1, 1}
 
-func NewNetwork(node Kademlia, pingRespCh chan *kademlia.PingResponse, findNodeRespCh chan []Contact) *Network {
-	n := Network{Node: node, pingRespCh:pingRespCh, findNodeRespCh:findNodeRespCh}
+func NewNetwork(node Kademlia) *Network {
+	n := Network{
+		Node: node,
+		PingChannels: make(map[string]chan kademliaProto.PingResponse),
+		FindNodeChannels: make(map[string]chan kademliaProto.FindNodeResponse),
+		FindValueChannels: make(map[string]chan kademliaProto.FindValueResponse),
+		StoreChannels: make(map[string]chan kademliaProto.StoreResponse),
+	}
 	return &n
 }
 
 func (network *Network) Listen(address string) {
-	// TODO
-	ln, err := net.Listen("tcp", address)
+	ln, err := net.Listen("tcp", address) //Listener
 	if err != nil {
 		panic(err)
 	}
 	for {
-		conn, err := ln.Accept()
+		conn, err := ln.Accept() //accept incoming connection
 		if err != nil {
 			panic(err)
 		}
-		go network.handleConnection(conn)
-	}
-}
-
-func (network *Network) NetworkJoin(node Kademlia, rootNode Contact) {
-	var table = node.Table
-	//var alpha = node.Alpha
-	rootNode.CalcDistance(node.Me.ID)
-	table.AddContact(rootNode)
-
-	network.NodeLookup(node.Me.ID)
-
-	//todo: How to fill table? PING rootnode and let rootnode add it? Or FindNode on self?
-
-	/*var closest = table.FindClosestContacts(node.Me.ID, alpha)
-
-	for _, contact := range closest { //is this needed??
-		table.AddContact(contact)
-	}*/
-}
-
-func printContacts (contacts []Contact) {
-	for _, contact := range contacts {
-		fmt.Printf("ID: " + contact.ID.String() + " IP: " + contact.Address + "\n")
-	}
-}
-
-func printContact (contact Contact) {
-	fmt.Printf("ID: " + contact.ID.String() + " IP: " + contact.Address + "\n")
-}
-
-// Sends out alpha RPCs for FindNode/FindValue and returns k closest contacts or value if found
-// TODO: Parallel requests, support for findValue, keep track of nodes already probed? Timing? How to return value or contacts?
-func (network *Network) NodeLookup(id *KademliaID)(contacts []Contact, value string) {
-	var table = network.Node.Table
-	var alpha = network.Node.Alpha
-	var k = network.Node.K
-	var closest = table.FindClosestContacts(id, alpha) // initiating shortList
-	var closestSoFar = closest[0].ID // current closest node to target
-	var receivedContacts = closest // latest received list of contacts
-	var shortList []Contact // k closest contacts to target
-	var probed = 0 // nr of probed nodes
-	value = ""
-
-	for i := 0; i < alpha; i++ {
-		var contact = closest[i]
-		network.SendFindNodeRequest(contact.Address, id.String(), network.Node.Me) //send to one of the closest contacts: destination, target id, sender
-		receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
-		probed++
-	}
-	// Sort contacts received and store k closest in shortList
-	shortList = sortContacts(id, receivedContacts, k)
-
-	// While recent responses are closer than closestSoFar, and less than k nodes has been successfully probed,
-	// Send new find contact requests
-	for (probed < k) && shortList[0].ID.CalcDistance(id).Less(closestSoFar.CalcDistance(id)) {
-		closestSoFar = shortList[0].ID
-
-		for i := 0; i < alpha; i++ {
-			var contact = shortList[i]
-			network.SendFindNodeRequest(contact.Address, id.String(), network.Node.Me) //send to one of the closest contacts: destination, target id, sender
-			receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
-			probed++
-		}
-		shortList = sortContacts(id, receivedContacts, k)
-	}
-	// If closest node is unchanged, send RPCs to the k closest contacts that are not yet queried
-	if closestSoFar.CalcDistance(id).Less(shortList[0].ID.CalcDistance(id)) {
-		for i := alpha; i < len(receivedContacts); i++ {
-			// TODO: shortList or contacts?
-			var contact = shortList[i]
-			network.SendFindNodeRequest(contact.Address,id.String(), network.Node.Me) //send to one of the closest contacts: destination, target id, sender
-			receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
-		}
-		shortList = sortContacts(id, receivedContacts, k)
-	}
-
-	//Add all received contacts
-	for _, contact := range receivedContacts {
-		network.Node.Table.AddContact(contact)
-	}
-
-	return contacts, value
-}
-// Sends out alpha RPCs for FindNode/FindValue and returns k closest contacts or value if found
-// TODO: Parallel requests, support for findValue, keep track of nodes already probed? Timing? How to return value or contacts?
-func (network *Network) NodeLookup2(id *KademliaID)(contacts []Contact, value string) {
-	var table = network.Node.Table
-	var alpha = network.Node.Alpha
-	var k = network.Node.K
-	var closest = table.FindClosestContacts(id, alpha) // initiating shortList
-	var closestSoFar = closest[0].ID // current closest node to target
-	var receivedContacts = closest // latest received list of contacts
-	var shortList []Contact // k closest contacts to target
-	var probed = 0 // nr of probed nodes
-	value = ""
-
-	for i := 0; i < alpha; i++ { //todo: parallelism
-		var contact = closest[i]
-		network.SendFindNodeRequest(contact.Address, network.Node.Me.ID.String(), network.Node.Me) //send to one of the closest contacts: destination, target id, sender
-		received := <-network.findNodeRespCh //todo: timeout
-		receivedContacts = append(receivedContacts, received...)
-		probed++
-	}
-
-	//Add all received contacts
-	for _, contact := range receivedContacts {
-		network.Node.Table.AddContact(contact)
-	}
-	// Sort contacts received and store k closest in shortList
-	shortList = sortContacts(id, receivedContacts, k)
-
-	// While target ID is not yet found and recent responses are closer than the previous closest,
-	// While recent responses are closer than closestSoFar, and less than k nodes has been successfully probed,
-	// Send new find contact requests
-	for (probed < k) && shortList[0].ID.CalcDistance(id).Less(closestSoFar.CalcDistance(id)) {
-		closestSoFar = shortList[0].ID
-
-		for i := 0; i < alpha; i++ {
-			var contact = shortList[i]
-			network.SendFindNodeRequest(contact.Address, network.Node.Me.ID.String(), network.Node.Me)
-			receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
-			probed++
-		}
-
-		shortList = sortContacts(id, receivedContacts, k)
-	}
-	// If closest node is unchanged, send RPCs to the k closest contacts that are not yet queried
-	if closestSoFar.CalcDistance(id).Less(shortList[0].ID.CalcDistance(id)) {
-		for i := alpha; i < len(receivedContacts); i++ {
-			// TODO: shortList or contacts?
-			var contact = shortList[i]
-			network.SendFindNodeRequest(contact.Address, network.Node.Me.ID.String(), network.Node.Me)
-			receivedContacts = append(receivedContacts, <- network.findNodeRespCh...)
-			probed++
-		}
-		shortList = sortContacts(id, receivedContacts, k)
-	}
-	return contacts, value
-}
-
-// Sort received list of contacts and return k closest to target
-func sortContacts(id *KademliaID, unsorted []Contact, k int)(sorted []Contact) {
-	if k > len(unsorted) {
-		k = len(unsorted)
-	}
-	candidates := ShortList{id, unsorted}
-	candidates.Sort()
-	sorted = candidates.Contacts[0:k]
-	return sorted
-}
-
-func (network *Network) handleConnection(conn net.Conn) {
-	buf := make([]byte, 512)
-	n, err := conn.Read(buf)
-	if err != nil {
-		panic(err)
-	}
-
-	buff := buf[:3]
-
-	switch {
-		//Ping
-		case bytes.Equal(buff, pingReqHead):
-			pingRequest := readPingRequest(buf[3:n])
-			fmt.Printf("Ping Request, Destination: " + pingRequest.GetDestination() + ", Sender: " + pingRequest.GetSender())
-			sendPingResponse(pingRequest.GetSender(), network.Node.Me.Address)
-		case bytes.Equal(buff, pingResHead):
-			pingResponse := readPingResponse(buf[3:n])
-			network.pingRespCh <- pingResponse
-			//fmt.Print(pingResponse)
-		//Find
-		case bytes.Equal(buff, findReqHead):
-			findRequest := readFindNodeRequest(buf[3:n])
-			// Get NodeID as string and convert it to type KademliaID
-			var targetID = NewKademliaID(findRequest.TargetId)
-			//Add to routing table, if it already exists it will be moved to front of bucket by add
-			var newContact = Contact{Address:findRequest.GetSender().Address, ID:NewKademliaID(findRequest.GetSender().NodeId)}
-			newContact.CalcDistance(network.Node.Me.ID)
-			printContact(newContact)
-
-			network.Node.Table.AddContact(newContact)
-			// List of k closest contacts to the target
-			var contacts = network.Node.Table.FindClosestContacts(targetID, network.Node.K)
-
-			fmt.Printf("CONTACTS")
-			if len(contacts)>0 {
-				fmt.Printf(" NOT EMPTY ")
-			} else {
-				fmt.Printf(" EMPTY ")
-			}
-			fmt.Printf("\n")
-			// Send response with address of sender and list of IDs
-			sendFindNodeResponse(findRequest.GetSender().Address, network.Node.Me, contacts)
-		case bytes.Equal(buff, findNodeResHead):
-			findNodeResponse := readFindNodeResponse(buf[3:n])
-			fmt.Print(findNodeResponse)
-			// TODO: Return value or list of contacts??
-			var contacts = formatContactsForReading(findNodeResponse.Ids)
-
-			fmt.Printf("CONTACTS")
-			if len(contacts)>0 {
-				fmt.Printf(" NOT EMPTY ")
-			} else {
-				fmt.Printf(" EMPTY ")
-			}
-			fmt.Printf("\n")
-
-			network.findNodeRespCh <- contacts
-
-			fmt.Print(findNodeResponse)
-		case bytes.Equal(buff, findValueResHead):
-			findValueResponse := readFindNodeResponse(buf[3:n])
-			fmt.Print(findValueResponse) //todo: what to do with the response
-		//Store
-		case bytes.Equal(buff, storeReqHead):
-			storeRequest := readStoreRequest(buf[3:n])
-			// Hash value and store (key, value) pair in hashtable
-			key := HashValue(storeRequest.GetValue())
-			network.Node.Store(key, storeRequest.GetValue())
-			// Return hash
-			sendStoreResponse(storeRequest.GetSender(), network.Node.Me.Address, key)
-		case bytes.Equal(buff, storeResHead):
-			storeResponse := readStoreResponse(buf[3:n])
-			fmt.Print(storeResponse) //todo: what to do with the response
+		go network.handleConnection(conn) //pass connection to switch
 	}
 }
 
@@ -279,211 +64,65 @@ func sendData(destination string, dataToSend []byte, header []byte) {
 	}
 }
 
-func sendPingResponse(destination string, sender string) {
-	res := &kademlia.PingResponse{
-		Sender: sender,
-		Response: "OK",
-	}
-	dataToSend, err := proto.Marshal(res)
-	if err != nil {
-		log.Fatal("Marshal error", err)
-	}
+func (network *Network) NetworkJoin(node Kademlia, rootNode Contact) {
+	var table = node.Table
+	//var alpha = node.Alpha
+	rootNode.CalcDistance(node.Me.ID)
+	table.AddContact(rootNode)
 
-	sendData(destination, dataToSend, pingResHead)
+	//todo: Iterative find here
+	//network.NodeLookup(node.Me.ID)
 }
 
-func sendFindNodeResponse(destination string, sender Contact, ids []Contact) {
-	res := &kademlia.FindNodeResponse{
-		Sender: formatContactForSending(sender),
-		Ids: formatContactsForSending2(ids),
+func (network *Network) handleConnection(conn net.Conn) { //todo: this switch should contain as little code as possible, try to move functionality/logic to help functions
+	message := make([]byte, 512) //Buffer to store message received in
+	n, err := conn.Read(message) //read incoming messages
+	if err != nil { //Error handling
+		log.Fatal(err)
 	}
-	dataToSend, err := proto.Marshal(res)
-	if err != nil {
-		log.Fatal("Marshal error", err)
+	header := message[:3] //parse the header
+	switch {
+		//Ping
+		case bytes.Equal(header, pingReqHead):
+			pingRequest := readPingRequest(message[3:n]) //read request
+			fmt.Printf("Ping Request ID: " + pingRequest.GetRpcID() + " from sender: " + pingRequest.GetSender().Address + " to: " +  pingRequest.GetDestination() + "\n") //print the result todo: should this be printed?
+			sendPingResponse(pingRequest.RpcID, pingRequest.GetSender().Address, network.Node.Me) //send response with rpcID from request //todo: functionality to own function
+		case bytes.Equal(header, pingResHead):
+			pingResponse := readPingResponse(message[3:n]) //read response
+			network.PingChannels[pingResponse.RpcID]  <- *pingResponse //Get the channel with the correct rpcID from the PingChannels Hashmap in network and send the response back to that channel
+		//Find Node
+		case bytes.Equal(header, findNodeReqHead): //todo: move code to own function
+			findNodeRequest := readFindNodeRequest(message[3:n])
+			// Get NodeID as string and convert it to type KademliaID
+			var targetID = NewKademliaID(findNodeRequest.TargetId)
+			//Add to routing table, if it already exists it will be moved to front of bucket by add
+			var newContact = Contact{Address:findNodeRequest.GetSender().Address, ID:NewKademliaID(findNodeRequest.GetSender().NodeId)}
+			newContact.CalcDistance(network.Node.Me.ID)
+			network.Node.Table.AddContact(newContact)
+			// List of k closest contacts to the target
+			var contacts = network.Node.Table.FindClosestContacts(targetID, network.Node.K)
+			// Send response with address of sender and list of IDs
+			sendFindNodeResponse(findNodeRequest.RpcID, findNodeRequest.GetSender().Address, network.Node.Me, contacts)
+		case bytes.Equal(header, findNodeResHead):
+			findNodeResponse := readFindNodeResponse(message[3:n])
+			network.FindNodeChannels[findNodeResponse.RpcID]  <- *findNodeResponse
+		//Find Value
+		case bytes.Equal(header, findValueReqHead): //todo: functionality to own function when implemented
+			findValueReq := readFindValueRequest(message[3:n])
+			fmt.Print(findValueReq) //todo: remove, only here such that var is used right now
+		case bytes.Equal(header, findValueResHead):
+			findValueResponse := readFindValueResponse(message[3:n])
+			network.FindValueChannels[findValueResponse.RpcID]  <- *findValueResponse
+		//Store
+		case bytes.Equal(header, storeReqHead): //todo: move code to own function
+			storeRequest := readStoreRequest(message[3:n])
+			// Hash value and store (key, value) pair in hashtable
+			key := HashValue(storeRequest.GetValue())
+			network.Node.Store(key, storeRequest.GetValue())
+			// Return hash
+			sendStoreResponse(storeRequest.RpcID, storeRequest.GetSender().Address, network.Node.Me, key)
+		case bytes.Equal(header, storeResHead):
+			storeResponse := readStoreResponse(message[3:n])
+			network.StoreChannels[storeResponse.RpcID]  <- *storeResponse
 	}
-
-	fmt.Printf("SENDER: " + res.GetSender().Address + "\n")
-	fmt.Printf("DEST: " + destination + "\n")
-	for _, contact := range res.Ids {
-		fmt.Printf("Address: " + contact.Address + " ID: " + contact.NodeId + "\n")
-	}
-	sendData(destination, dataToSend, findNodeResHead)
 }
-
-func sendFindValueResponse(destination string, sender string, value []byte) {
-	res := &kademlia.FindValueResponse{
-		Sender: sender,
-		Value: value,
-	}
-	dataToSend, err := proto.Marshal(res)
-	if err != nil {
-		log.Fatal("Marshal error", err)
-	}
-
-	sendData(destination, dataToSend, findValueResHead)
-
-}
-
-func sendStoreResponse(destination string, sender string, value string) {
-	hash := value
-
-	res := &kademlia.StoreResponse{
-		Sender: sender,
-		Hash: hash,
-	}
-	dataToSend, err := proto.Marshal(res)
-	if err != nil {
-		log.Fatal("Marshal error", err)
-	}
-
-	sendData(destination, dataToSend, storeResHead)
-}
-
-func (network *Network) SendPingRequest(destination string, sender string){
-	res := &kademlia.PingRequest{
-		Sender:      sender,
-		Destination: destination,
-	}
-	dataToSend, err := proto.Marshal(res)
-	if err != nil {
-		log.Fatal("Marshal error", err)
-	}
-
-	sendData(destination, dataToSend, pingReqHead)
-}
-
-func (network *Network) SendFindNodeRequest(destination string, targetID string, sender Contact) {
-	res := &kademlia.FindNodeRequest{
-		Sender:		formatContactForSending(sender),
-		TargetId: 	targetID,
-	}
-	dataToSend, err := proto.Marshal(res)
-	if err != nil {
-		log.Fatal("Marshal error", err)
-	}
-	fmt.Printf(" SendFindNodeRequest: " + destination)
-	sendData(destination, dataToSend, findReqHead)
-}
-
-func (network *Network) SendFindDataRequest(hash string) {
-	// TODO
-}
-
-func (network *Network) SendStoreRequest(contact *Contact, kademliaObj Kademlia, data []byte) {
-	res := &kademlia.StoreRequest{
-		Sender: kademliaObj.Me.Address,
-		Value:  data,
-	}
-	dataToSend, err := proto.Marshal(res)
-	if err != nil {
-		log.Fatal("Marshal error", err)
-	}
-
-	sendData(contact.Address, dataToSend, storeReqHead)
-}
-
-func readPingRequest(message []byte) *kademlia.PingRequest {
-	newPing := &kademlia.PingRequest{}
-
-	var err = proto.Unmarshal(message, newPing)
-
-	if err != nil {
-		log.Fatal("Unmarshalling error ", err)
-	}
-	return newPing
-}
-
-func readStoreRequest(message []byte) *kademlia.StoreRequest {
-	newStore := &kademlia.StoreRequest{}
-
-	var err = proto.Unmarshal(message, newStore)
-
-	if err != nil {
-		log.Fatal("Unmarshalling error ", err)
-	}
-	return newStore
-}
-
-func readFindNodeRequest(message []byte) *kademlia.FindNodeRequest {
-	newFindNode := &kademlia.FindNodeRequest{}
-
-	var err = proto.Unmarshal(message, newFindNode)
-
-	if err != nil {
-		log.Fatal("Unmarshalling error ", err)
-	}
-	return newFindNode
-}
-
-func readPingResponse(message []byte) *kademlia.PingResponse {
-	res := &kademlia.PingResponse{}
-
-	var err = proto.Unmarshal(message, res)
-
-	if err != nil {
-		log.Fatal("Unmarshalling error ", err)
-	}
-	return res
-}
-
-func readStoreResponse(message []byte) *kademlia.StoreResponse {
-	res := &kademlia.StoreResponse{}
-
-	var err = proto.Unmarshal(message, res)
-
-	if err != nil {
-		log.Fatal("Unmarshalling error ", err)
-	}
-	return res
-}
-
-func readFindNodeResponse(message []byte) *kademlia.FindNodeResponse {
-	res := &kademlia.FindNodeResponse{}
-
-	var err = proto.Unmarshal(message, res)
-
-	if err != nil {
-		log.Fatal("Unmarshalling error ", err)
-	}
-	return res
-}
-
-func readFindValueResponse(message []byte) *kademlia.FindValueResponse {
-	res := &kademlia.FindValueResponse{}
-
-	var err = proto.Unmarshal(message, res)
-
-	if err != nil {
-		log.Fatal("Unmarshalling error ", err)
-	}
-	return res
-}
-
-func formatContactsForSending(contacts []*Contact) []*kademlia.Contact {
-	var sendingContacts []*kademlia.Contact
-	for _, contact := range contacts {
-		sendingContacts = append(sendingContacts, &kademlia.Contact{NodeId: contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()})
-	}
-	return sendingContacts
-}
-
-func formatContactsForSending2(contacts []Contact) []*kademlia.Contact {
-	var sendingContacts []*kademlia.Contact
-	for _, contact := range contacts {
-		sendingContacts = append(sendingContacts, &kademlia.Contact{NodeId: contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()})
-	}
-	return sendingContacts
-}
-
-func formatContactForSending(contact Contact) *kademlia.Contact {
-	return &kademlia.Contact{NodeId: contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()}
-}
-
-func formatContactsForReading(contacts []*kademlia.Contact) []Contact{
-	var readContacts []Contact
-	for _, contact := range contacts {
-		readContacts = append(readContacts, Contact{ID:NewKademliaID(contact.NodeId), Address:contact.Address, Distance:NewKademliaID(contact.Distance)})
-	}
-	return readContacts
-}
-

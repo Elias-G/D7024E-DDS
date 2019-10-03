@@ -9,43 +9,51 @@ service Kademlia {
 }
 
 message PingRequest {
-    string sender = 1;
-    string destination = 2;
+    string rpcID = 1;
+    Contact sender = 2;
+    string destination = 3;
 }
 
 message PingResponse {
-    string sender = 1;
-    string response = 2;
+    string rpcID = 1;
+    Contact sender = 2;
+    string response = 3;
 }
 
 message StoreRequest {
-    string sender = 1;
-    bytes value = 2;
+    string rpcID = 1;
+    Contact sender = 2;
+    bytes value = 3;
 }
 
 message StoreResponse {
-    string sender = 1;
-    string hash = 2;
+    string rpcID = 1;
+    Contact sender = 2;
+    string hash = 3;
 }
 
 message FindNodeRequest {
-    Contact sender = 1;
-    string targetId = 2; //node to look for
+    string rpcID = 1;
+    Contact sender = 2;
+    string targetId = 3;
 }
 
 message FindValueRequest {
-    string sender = 1;
-    Contact contact = 2;
+    string rpcID = 1;
+    Contact sender = 2;
+    string hash = 3;
 }
 
 message FindNodeResponse {
-    Contact sender = 1;
-    repeated Contact ids = 2;
+    string rpcID = 1;
+    Contact sender = 2;
+    repeated Contact contacts = 3;
 }
 
 message FindValueResponse {
-    string sender = 1;
-    bytes value = 2;
+    string rpcID = 1;
+    Contact sender = 2;
+    bytes value = 3;
 }
 
 message Contact {

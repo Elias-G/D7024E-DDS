@@ -1,8 +1,8 @@
 package src
 
 import (
-	"D7024E-DDS/proto"
 	"encoding/hex"
+	kademlia "proto"
 	"reflect"
 	"testing"
 )
@@ -66,7 +66,7 @@ func TestNewNetwork(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewNetwork(tt.args.node); !reflect.DeepEqual(got, tt.want) {
+			if got := NewNetwork(tt.args.node, make(chan *kademlia.PingResponse), make(chan []Contact)); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewNetwork() = %v, want %v", got, tt.want)
 			}
 		})
@@ -78,7 +78,7 @@ func Test_formatContactForSending(t *testing.T) {
 	id := NewRandomKademliaID()
 	contact.CalcDistance(id)
 
-	var i interface{} = formatContactForSending(contact)
+	var i interface{} = formatContactForSend(contact)
 
 	_, ok := i.(*kademlia.Contact)
 	if !ok {
@@ -91,7 +91,7 @@ func Test_formatContactsForReading(t *testing.T) {
 	id := NewRandomKademliaID()
 	contacts := generateContactsForReading(nrOfContacts, id)
 
-	var i interface{} = formatContactsForReading(contacts)
+	var i interface{} = formatContactsForRead(contacts)
 
 	_, ok := i.([]Contact)
 	if !ok {
@@ -103,7 +103,7 @@ func Test_formatContactsForSending(t *testing.T) {
 	const nrOfContacts = 10
 	id := NewRandomKademliaID()
 	contacts := generateContactsForSending(nrOfContacts, id)
-	var i interface{} = formatContactsForSending(contacts)
+	var i interface{} = formatContactsForSend(contacts)
 
 	_, ok := i.([]*kademlia.Contact)
 	if !ok {
@@ -115,7 +115,7 @@ func Test_formatContactsForSending2(t *testing.T) {
 	const nrOfContacts = 10
 	id := NewRandomKademliaID()
 	contacts := generateContactsForSending2(nrOfContacts, id)
-	var i interface{} = formatContactsForSending2(contacts)
+	var i interface{} = formatContactsForSend2(contacts)
 
 	_, ok := i.([]*kademlia.Contact)
 	if !ok {
