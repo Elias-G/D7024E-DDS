@@ -2,7 +2,6 @@ package src
 
 import (
 	"fmt"
-	kademliaProto "proto"
 	"time"
 )
 
@@ -15,9 +14,31 @@ type Kademlia struct {
 	PingWait  		time.Duration
 }
 
-func (kademlia *Kademlia) findNode(target *Contact) {
+/*
+CLI commands
+ */
+func (kademlia *Kademlia) PutCommand(network Network, value []byte) {
+	// TODO
+	fmt.Printf("This should return a hash!\n")
+}
+
+func (kademlia *Kademlia) GetCommand(network Network, hash string) {
+	// TODO
+	fmt.Printf("This should return a value!\n")
+}
+
+func (kademlia *Kademlia) ExitCommand(network Network) {
+	// TODO
+	fmt.Printf("This should Exit!\n")
+}
+
+
+/*
+RPCs
+ */
+func (kademlia *Kademlia) findNode(network Network, target *Contact) {
 	var contacts []Contact
-	contacts,_ = kademlia.NodeLookup(target, "", false)
+	contacts,_ = kademlia.NodeLookup(network, target, "", false)
 
 	if contacts[0].ID.Equals(target.ID) {
 		// Found what you were looking for! :D
@@ -26,15 +47,17 @@ func (kademlia *Kademlia) findNode(target *Contact) {
 	}
 }
 
-func (kademlia *Kademlia) findValue(hash string) {
+func (kademlia *Kademlia) findValue(network Network, hash string) string {
 	var contacts []Contact
 	var value string
-	contacts, value = kademlia.NodeLookup(nil, hash, true)
+	contacts, value = kademlia.NodeLookup(network,nil, hash, true)
 
 	if value == "" {
-		// No value found, want a list of contacts??? :)
+		// No value found
+		return "No value with the hash " + hash + " was found. But " + string(len(contacts)) + " close contacts was found."
 	} else {
-		// Return value somewhere to someone
+		// Return value
+		return value
 	}
 }
 
@@ -54,13 +77,10 @@ func (kademlia *Kademlia) Ping(network Network, destination string, sender Conta
 		}
 	})
 
-	rpcID := network.SendPingRequest(destination, sender) //send a ping request and store the rpcID
-	network.PingChannels[rpcID] = make(chan kademliaProto.PingResponse) //store a ping channel in the ping channels hash map with the rpcId as key
-	response := <- network.PingChannels[rpcID] //wait for response from the ping channel
+	response := PingRPC(network, destination, sender)
 
 	found=true //if this code is reached a response came back and node is alive
 	timer.Stop() //then timer can be stopped
-	fmt.Printf("Ping RpcID: " + response.GetRpcID() + " with Response: " + response.GetResponse() + " from sender: " + response.GetSender().Address + "\n") //print the result todo: should this be printed?
+	fmt.Printf(response) //print the result todo: should this be printed?
 	//network.Node.Table.AddContact(sender) //todo: make sender to contact, to add to front of bucket
-	//find node contact in bucket and add it to front
 }

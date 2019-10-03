@@ -2,7 +2,7 @@ package src
 
 // Sends out alpha RPCs for FindNode/FindValue and returns k closest contacts or value if found
 // TODO: Parallel requests, support for findValue, keep track of nodes already probed? Timing? How to return value or contacts?
-func (kademlia *Kademlia) NodeLookup(target *Contact, hash string, findValue bool)(contacts []Contact, value string) {
+func (kademlia *Kademlia) NodeLookup(network Network, target *Contact, hash string, findValue bool)(contacts []Contact, value string) {
 	var table = kademlia.RoutingTable
 	var alpha = kademlia.Alpha
 	var k = kademlia.K
@@ -15,12 +15,12 @@ func (kademlia *Kademlia) NodeLookup(target *Contact, hash string, findValue boo
 	for i := 0; i < alpha; i++ {
 		var contact = shortList[i]
 		if findValue {
-			shortList, probed, value = kademlia.sendFindValueRPCs(contact, id, shortList, probed, findValue)
+			shortList, probed, value = kademlia.sendFindValueRPCs(network, contact, id, shortList, probed, findValue)
 			if value != "" {
 				return nil, value
 			}
 		} else {
-			shortList, probed = kademlia.sendFindNodeRPCs(contact, id, shortList, probed)
+			shortList, probed = kademlia.sendFindNodeRPCs(network, contact, id, shortList, probed)
 		}
 	}
 
@@ -32,24 +32,24 @@ func (kademlia *Kademlia) NodeLookup(target *Contact, hash string, findValue boo
 			for i := 0; i < alpha; i++ {
 				var contact = shortList[i]
 				if findValue {
-					shortList, probed, value = kademlia.sendFindValueRPCs(contact, id, shortList, probed, findValue)
+					shortList, probed, value = kademlia.sendFindValueRPCs(network, contact, id, shortList, probed, findValue)
 					if value != "" {
 						return nil, value
 					}
 				} else {
-					shortList, probed = kademlia.sendFindNodeRPCs(contact, id, shortList, probed)
+					shortList, probed = kademlia.sendFindNodeRPCs(network, contact, id, shortList, probed)
 				}
 			}
 		} else { // if more than k nodes has been successfully probed, send RPCs to k closest (not yet probed)
 			for i := 0; i < k; i++ {
 				var contact = shortList[i]
 				if findValue {
-					shortList, probed, value = kademlia.sendFindValueRPCs(contact, id, shortList, probed, findValue)
+					shortList, probed, value = kademlia.sendFindValueRPCs(network, contact, id, shortList, probed, findValue)
 					if value != "" {
 						return nil, value
 					}
 				} else {
-					shortList, probed = kademlia.sendFindNodeRPCs(contact, id, shortList, probed)
+					shortList, probed = kademlia.sendFindNodeRPCs(network, contact, id, shortList, probed)
 				}
 			}
 		}
@@ -58,23 +58,23 @@ func (kademlia *Kademlia) NodeLookup(target *Contact, hash string, findValue boo
 	return contacts, ""
 }
 
-func (kademlia *Kademlia)sendFindNodeRPCs(contact Contact, id *KademliaID, shortList []Contact, probed []Contact)(newShortList []Contact, newProbed []Contact) {
-	var received = FindNodeRPC(contact.Address, id.String(), kademlia.Me)
+func (kademlia *Kademlia)sendFindNodeRPCs(network Network, contact Contact, id *KademliaID, shortList []Contact, probed []Contact)(newShortList []Contact, newProbed []Contact) {
+	var received = FindNodeRPC(network, contact.Address, id.String(), kademlia.Me)
 	newProbed = append(probed, contact)
 	newShortList = updateShortList(received, id, shortList, probed)
 	return newShortList, newProbed
 }
 
-func (kademlia *Kademlia)sendFindValueRPCs(contact Contact, id *KademliaID, shortList []Contact, probed []Contact, findValue bool)(newShortList []Contact, newProbed []Contact, value string) {
+func (kademlia *Kademlia)sendFindValueRPCs(network Network, contact Contact, id *KademliaID, shortList []Contact, probed []Contact, findValue bool)(newShortList []Contact, newProbed []Contact, value string) {
 	value = ""
-	received := FindValueRPC(contact.Address, id.String(), kademlia.Me)
+	received := FindValueRPC(network, contact.Address, id.String(), kademlia.Me)
 	var i interface {} = received
 	_, foundValue := i.(string)
 	if !foundValue {
 		newProbed = append(probed, contact)
-		newShortList = updateShortList(received, id, shortList, probed)
+		//newShortList = updateShortList(received, id, shortList, probed) //todo: findvalue rpc returns a value not contacts??
 	} else {
-		value = received
+		value = 	"RANDOM VALUE"//received //todo ??
 	}
 	return newShortList, newProbed, value
 }
