@@ -50,7 +50,7 @@ func (kademlia *Kademlia) findNode(network Network, target *Contact) {
 func (kademlia *Kademlia) findValue(network Network, hash string) string {
 	var contacts []Contact
 	var value string
-	contacts, value = kademlia.NodeLookup(network,nil, hash, true)
+	contacts, value = kademlia.NodeLookup(network, nil, hash, true)
 
 	if value == "" {
 		// No value found
