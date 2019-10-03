@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	src "src-code"
-	kademlia2 "proto"
 	"strconv"
 	"strings"
 )
@@ -46,7 +45,7 @@ func main() {
 			PingWait:  20000000000,
 		}
 
-		kadnet := *src.NewNetwork(*kademlia, make(chan *kademlia2.PingResponse), make(chan []src.Contact))
+		kadnet := *src.NewNetwork(*kademlia)
 
 		print(kademlia)
 
@@ -73,7 +72,7 @@ func main() {
 			HashTable: hashTable,
 		}
 
-		kadnet := *src.NewNetwork(*kademlia, make(chan *kademlia2.PingResponse), make(chan []src.Contact))
+		kadnet := *src.NewNetwork(*kademlia)
 
 		go kadnet.Listen(me.Address)
 
@@ -146,14 +145,8 @@ func parse(ip string, input []string, kadnet src.Network, kademlia src.Kademlia)
 	case "ping":
 		fmt.Printf("PINGING!")
 		if len(input)>2 {
-			sender := ip + ":" + input[2]
 			dest := input[1] + ":" + input[2]
-			go (*src.Kademlia).Ping(&kademlia, kadnet, dest, sender)
-		}
-	case "nodelookup":
-		if len(input)>1 {
-			kademliaId := input[1]
-			go kadnet.NodeLookup(src.NewKademliaID(kademliaId))
+			go (*src.Kademlia).Ping(&kademlia, kadnet, dest, kademlia.Me)
 		}
 	case "routingtable":
 		var contacts = kademlia.Table.FindClosestContacts(kademlia.Me.ID, 20)
