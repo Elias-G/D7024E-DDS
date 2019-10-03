@@ -7,20 +7,35 @@ import (
 )
 
 type Kademlia struct {
-	Table     RoutingTable
-	Me        Contact
-	K         int
-	Alpha     int
-	HashTable map[string][]byte
-	PingWait  time.Duration
+	RoutingTable	RoutingTable
+	Me        		Contact
+	K         		int
+	Alpha     		int
+	HashTable 		map[string][]byte
+	PingWait  		time.Duration
 }
 
-func (kademlia *Kademlia) LookupContact(target *Contact) {
-	// TODO
+func (kademlia *Kademlia) findNode(target *Contact) {
+	var contacts []Contact
+	contacts,_ = kademlia.NodeLookup(target, "", false)
+
+	if contacts[0].ID.Equals(target.ID) {
+		// Found what you were looking for! :D
+	} else {
+		// Close enough
+	}
 }
 
-func (kademlia *Kademlia) LookupData(hash string) {
-	// TODO
+func (kademlia *Kademlia) findValue(hash string) {
+	var contacts []Contact
+	var value string
+	contacts, value = kademlia.NodeLookup(nil, hash, true)
+
+	if value == "" {
+		// No value found, want a list of contacts??? :)
+	} else {
+		// Return value somewhere to someone
+	}
 }
 
 func (kademlia *Kademlia) Store(key string, value []byte) {

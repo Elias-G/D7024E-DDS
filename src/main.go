@@ -37,7 +37,7 @@ func main() {
 		var table = src.NewRoutingTable(me)
 
 		var kademlia = &src.Kademlia{
-			Table:     *table,
+			RoutingTable:     *table,
 			Me:        me,
 			K:         k,
 			Alpha:     1,
@@ -65,7 +65,7 @@ func main() {
 		table := src.NewRoutingTable(me)
 
 		var kademlia = &src.Kademlia{
-			Table:     *table,
+			RoutingTable:     *table,
 			Me:        me,
 			K:         k,
 			Alpha:     1,
@@ -149,7 +149,7 @@ func parse(ip string, input []string, kadnet src.Network, kademlia src.Kademlia)
 			go (*src.Kademlia).Ping(&kademlia, kadnet, dest, kademlia.Me)
 		}
 	case "routingtable":
-		var contacts = kademlia.Table.FindClosestContacts(kademlia.Me.ID, 20)
+		var contacts = kademlia.RoutingTable.FindClosestContacts(kademlia.Me.ID, 20)
 		fmt.Print(len(contacts))
 		for _, contact := range contacts {
 			fmt.Printf("Address: " + contact.Address + "\n")
