@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	kademliaProto "proto"
+	"strconv"
 )
 
 type Network struct {
@@ -65,7 +66,7 @@ func sendData(destination string, dataToSend []byte, header []byte) {
 }
 
 func (network *Network) NetworkJoin(node Kademlia, rootNode Contact) {
-	var table = node.Table
+	var table = node.RoutingTable
 	//var alpha = node.Alpha
 	rootNode.CalcDistance(node.Me.ID)
 	table.AddContact(rootNode)
@@ -98,9 +99,9 @@ func (network *Network) handleConnection(conn net.Conn) { //todo: this switch sh
 			//Add to routing table, if it already exists it will be moved to front of bucket by add
 			var newContact = Contact{Address:findNodeRequest.GetSender().Address, ID:NewKademliaID(findNodeRequest.GetSender().NodeId)}
 			newContact.CalcDistance(network.Node.Me.ID)
-			network.Node.Table.AddContact(newContact)
+			network.Node.RoutingTable.AddContact(newContact)
 			// List of k closest contacts to the target
-			var contacts = network.Node.Table.FindClosestContacts(targetID, network.Node.K)
+			var contacts = network.Node.RoutingTable.FindClosestContacts(targetID, network.Node.K)
 			// Send response with address of sender and list of IDs
 			sendFindNodeResponse(findNodeRequest.RpcID, findNodeRequest.GetSender().Address, network.Node.Me, contacts)
 		case bytes.Equal(header, findNodeResHead):
@@ -125,4 +126,39 @@ func (network *Network) handleConnection(conn net.Conn) { //todo: this switch sh
 			storeResponse := readStoreResponse(message[3:n])
 			network.StoreChannels[storeResponse.RpcID]  <- *storeResponse
 	}
+}
+
+func GetIpAddress() string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		log.Fatal("interface error", err)
+	}
+
+
+	for _, i := range ifaces {
+		if i.Name == "eth0" {
+			addrs, err := i.Addrs()
+			if err != nil {
+				log.Fatal("interface error", err)
+			}
+			for _, addr := range addrs {
+				var ip net.IP
+				switch v := addr.(type) {
+				case *net.IPNet:
+					ip = v.IP
+				case *net.IPAddr:
+					ip = v.IP
+				}
+				return ip.String()
+			}
+		}
+	}
+
+	return ""
+}
+
+func CreateNode(port int, ip string, id *KademliaID) Contact {
+	address := ip + ":" + strconv.Itoa(port)
+	me := NewContact(id, address)
+	return me
 }

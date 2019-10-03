@@ -1,20 +1,18 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"os"
 	src "src-code"
-	"strconv"
-	"strings"
 )
 
+//program variables
 var k = 20
 var alpha = 3
 var rootId = src.NewKademliaID("0fda68927f2b2ff836f73578db0fa54c29f7fd92")
+var port = 5000
 
 func main() {
 	arg := os.Args[1]
@@ -30,14 +28,14 @@ func main() {
 
 	//If arg==1 then its the rootnode that is suppose to start
 	if arg == "1" {
-		var ip = getIpAddress()
-		var me = createNode(5000, ip, rootId)
+		var ip = src.GetIpAddress()
+		var me = src.CreateNode(5000, ip, rootId)
 		me.CalcDistance(me.ID)
 		log.Printf("IP: " + ip + " kademlia id: " + me.ID.String())
 		var table = src.NewRoutingTable(me)
 
 		var kademlia = &src.Kademlia{
-			Table:     *table,
+			RoutingTable:     *table,
 			Me:        me,
 			K:         k,
 			Alpha:     1,
@@ -45,18 +43,18 @@ func main() {
 			PingWait:  20000000000,
 		}
 
-		kadnet := *src.NewNetwork(*kademlia)
+		network := *src.NewNetwork(*kademlia)
 
 		print(kademlia)
 
-		go kadnet.Listen(me.Address)
-		clilisten(ip, kadnet, *kademlia)
+		go network.Listen(me.Address)
+		src.Clilisten(ip, network, *kademlia, port)
 		//if arg == 2 then its a normal node to start
 	} else if arg == "2" {
-		var ip = getIpAddress()
+		var ip = src.GetIpAddress()
 
-		var rootNode = createNode(5000, "10.0.0.3", rootId)
-		var me = createNode(5000, ip, src.NewRandomKademliaID())
+		var rootNode = src.CreateNode(5000, "10.0.0.3", rootId)
+		var me = src.CreateNode(5000, ip, src.NewRandomKademliaID())
 		me.CalcDistance(me.ID)
 		rootNode.CalcDistance(me.ID)
 
@@ -65,96 +63,23 @@ func main() {
 		table := src.NewRoutingTable(me)
 
 		var kademlia = &src.Kademlia{
-			Table:     *table,
+			RoutingTable:     *table,
 			Me:        me,
 			K:         k,
 			Alpha:     1,
 			HashTable: hashTable,
 		}
 
-		kadnet := *src.NewNetwork(*kademlia)
+		network := *src.NewNetwork(*kademlia)
 
-		go kadnet.Listen(me.Address)
+		go network.Listen(me.Address)
 
-		kadnet.NetworkJoin(*kademlia, rootNode)
+		network.NetworkJoin(*kademlia, rootNode)
 
 
-		clilisten(ip, kadnet, *kademlia)
+		src.Clilisten(ip, network, *kademlia, port)
 	} else {
 		fmt.Print("Choose to be a leader(1) or a follower(2)")
 	}
 
-}
-
-func getIpAddress() string {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		log.Fatal("interface error", err)
-	}
-
-
-	for _, i := range ifaces {
-		if i.Name == "eth0" {
-			addrs, err := i.Addrs()
-			if err != nil {
-				log.Fatal("interface error", err)
-			}
-			for _, addr := range addrs {
-				var ip net.IP
-				switch v := addr.(type) {
-				case *net.IPNet:
-					ip = v.IP
-				case *net.IPAddr:
-					ip = v.IP
-				}
-				return ip.String()
-			}
-		}
-	}
-
-	return ""
-}
-
-func createNode(port int, ip string, id *src.KademliaID) src.Contact {
-	address := ip + ":" + strconv.Itoa(port)
-	me := src.NewContact(id, address)
-	return me
-}
-
-
-func clilisten(ip string, kadnet src.Network, kademlia src.Kademlia) {
-	cmd := ""
-	fmt.Print("> ")
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		cmd = scanner.Text()
-		words := strings.Fields(cmd)
-		parse(ip, words, kadnet, kademlia)
-		//fmt.Println(reflect.TypeOf(words).String())
-		fmt.Print("> ")
-	}
-	if scanner.Err() != nil {
-		// handle error.
-	}
-}
-
-func parse(ip string, input []string, kadnet src.Network, kademlia src.Kademlia) {
-	switch input[0] {
-	case "h":
-		fmt.Print("This is help")
-	case "ping":
-		fmt.Printf("PINGING!")
-		if len(input)>2 {
-			dest := input[1] + ":" + input[2]
-			go (*src.Kademlia).Ping(&kademlia, kadnet, dest, kademlia.Me)
-		}
-	case "routingtable":
-		var contacts = kademlia.Table.FindClosestContacts(kademlia.Me.ID, 20)
-		fmt.Print(len(contacts))
-		for _, contact := range contacts {
-			fmt.Printf("Address: " + contact.Address + "\n")
-		}
-	default:
-		fmt.Print("Try again")
-	}
 }
