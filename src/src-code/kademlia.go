@@ -2,6 +2,7 @@ package src
 
 import (
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -28,8 +29,7 @@ func (kademlia *Kademlia) GetCommand(network Network, hash string) {
 }
 
 func (kademlia *Kademlia) ExitCommand(network Network) {
-	// TODO
-	fmt.Printf("This should Exit!\n")
+	os.Exit(1)
 }
 
 
