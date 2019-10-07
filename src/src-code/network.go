@@ -118,8 +118,6 @@ func (network *Network) handleConnection(conn net.Conn) { //todo: this switch sh
 			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(findValueReq.GetSender()))
 			value, contacts := network.FindValue(findValueReq)
 			sendFindValueResponse(findValueReq.GetRpcID(), findValueReq.GetSender().Address, network.Node.Me, value, contacts)
-		
-		
 		case bytes.Equal(header, findValueResHead):
 			findValueResponse := readFindValueResponse(message[3:n])
 			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(findValueResponse.GetSender()))
