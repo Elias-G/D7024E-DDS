@@ -53,7 +53,7 @@ message FindNodeResponse {
 message FindValueResponse {
     string rpcID = 1;
     Contact sender = 2;
-    string value = 3;
+    bytes value = 3;
     repeated Contact contacts = 4;
 }
 

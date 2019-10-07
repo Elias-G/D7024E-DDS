@@ -24,7 +24,7 @@ func FindNodeRPC(network Network, destination string, targetID string, sender Co
 	return formatContactsForRead(response.Contacts) //Return the contacts
 }
 
-func FindValueRPC(network Network, destination string, targetID string, sender Contact) (string, []Contact) {
+func FindValueRPC(network Network, destination string, targetID string, sender Contact) ([]byte, []Contact) {
 	rpcID := network.SendFindValueRequest(destination, targetID, sender) //send a FindValue request and store the rpcID
 	network.FindValueChannels[rpcID] = make(chan kademliaProto.FindValueResponse) //store a FindValue channel in the FindValue channels hash map with the rpcId as key
 	response := <- network.FindValueChannels[rpcID] //wait for response from the FindNode channel
@@ -68,12 +68,12 @@ func sendFindNodeResponse(rpcID string, destination string, sender Contact, cont
 	sendData(destination, dataToSend, findNodeResHead)
 }
 
-func sendFindValueResponse(rpcID string, destination string, sender Contact, value string, contacts []*Contact) {
+func sendFindValueResponse(rpcID string, destination string, sender Contact, value []byte, contacts []Contact) {
 	res := &kademliaProto.FindValueResponse{
 		RpcID: rpcID,
 		Sender: formatContactForSend(sender),
 		Value: value,
-		Contacts: formatContactsForSend(contacts),
+		Contacts: formatContactsForSend2(contacts),
 	}
 	dataToSend, err := proto.Marshal(res)
 	if err != nil {

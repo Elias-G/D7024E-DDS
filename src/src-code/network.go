@@ -92,25 +92,18 @@ func (network *Network) handleConnection(conn net.Conn) { //todo: this switch sh
 			pingResponse := readPingResponse(message[3:n]) //read response
 			network.PingChannels[pingResponse.RpcID]  <- *pingResponse //Get the channel with the correct rpcID from the PingChannels Hashmap in network and send the response back to that channel
 		//Find Node
-		case bytes.Equal(header, findNodeReqHead): //todo: move code to own function
+		case bytes.Equal(header, findNodeReqHead):
 			findNodeRequest := readFindNodeRequest(message[3:n])
-			// Get NodeID as string and convert it to type KademliaID
-			var targetID = NewKademliaID(findNodeRequest.TargetId)
-			//Add to routing table, if it already exists it will be moved to front of bucket by add
-			var newContact = Contact{Address:findNodeRequest.GetSender().Address, ID:NewKademliaID(findNodeRequest.GetSender().NodeId)}
-			newContact.CalcDistance(network.Node.Me.ID)
-			network.Node.RoutingTable.AddContact(newContact)
-			// List of k closest contacts to the target
-			var contacts = network.Node.RoutingTable.FindClosestContacts(targetID, network.Node.K)
-			// Send response with address of sender and list of IDs
+			contacts := network.FindNode(findNodeRequest)
 			sendFindNodeResponse(findNodeRequest.RpcID, findNodeRequest.GetSender().Address, network.Node.Me, contacts)
 		case bytes.Equal(header, findNodeResHead):
 			findNodeResponse := readFindNodeResponse(message[3:n])
 			network.FindNodeChannels[findNodeResponse.RpcID]  <- *findNodeResponse
 		//Find Value
-		case bytes.Equal(header, findValueReqHead): //todo: functionality to own function when implemented
+		case bytes.Equal(header, findValueReqHead):
 			findValueReq := readFindValueRequest(message[3:n])
-			fmt.Print(findValueReq) //todo: remove, only here such that var is used right now
+			value, contacts := network.FindValue(findValueReq)
+			sendFindValueResponse(findValueReq.GetRpcID(), findValueReq.GetSender().Address, network.Node.Me, value, contacts)
 		case bytes.Equal(header, findValueResHead):
 			findValueResponse := readFindValueResponse(message[3:n])
 			network.FindValueChannels[findValueResponse.RpcID]  <- *findValueResponse
@@ -128,12 +121,39 @@ func (network *Network) handleConnection(conn net.Conn) { //todo: this switch sh
 	}
 }
 
+func (network *Network) FindNode(findNodeRequest *kademliaProto.FindNodeRequest) []Contact {
+	// Get NodeID as string and convert it to type KademliaID
+	var targetID = NewKademliaID(findNodeRequest.TargetId)
+	//Add to routing table, if it already exists it will be moved to front of bucket by add
+	var newContact = Contact{Address:findNodeRequest.GetSender().Address, ID:NewKademliaID(findNodeRequest.GetSender().NodeId)}
+	newContact.CalcDistance(network.Node.Me.ID)
+	network.Node.RoutingTable.AddContact(newContact)
+	// List of k closest contacts to the target
+	return network.Node.RoutingTable.FindClosestContacts(targetID, network.Node.K)
+}
+
+func (network *Network) FindValue(findValueRequest *kademliaProto.FindValueRequest)(value []byte, contacts []Contact) {
+	// Get NodeID as string and convert it to type KademliaID
+	var hash = NewKademliaID(findValueRequest.Hash)
+	//Add to routing table, if it already exists it will be moved to front of bucket by add
+	var newContact = Contact{Address:findValueRequest.GetSender().Address, ID:NewKademliaID(findValueRequest.GetSender().NodeId)}
+	newContact.CalcDistance(network.Node.Me.ID)
+	network.Node.RoutingTable.AddContact(newContact)
+
+	if val, ok := network.Node.HashTable[findValueRequest.Hash]; ok {
+		value = val
+	} else {
+		// List of k closest contacts to the target
+		contacts = network.Node.RoutingTable.FindClosestContacts(hash, network.Node.K)
+	}
+	return value, contacts
+}
+
 func GetIpAddress() string {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		log.Fatal("interface error", err)
 	}
-
 
 	for _, i := range ifaces {
 		if i.Name == "eth0" {
