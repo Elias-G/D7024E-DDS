@@ -19,13 +19,19 @@ type Kademlia struct {
 CLI commands
  */
 func (kademlia *Kademlia) PutCommand(network Network, value []byte) {
-	// TODO
-	fmt.Printf("This should return a hash!\n")
+	hash := HashValue(value)
+	nodes := kademlia.findNode(network, hash)
+
+	for _, node := range nodes {
+		StoreRPC(network, node.Address, kademlia.Me, value)
+	}
+
+	fmt.Printf(hash + "\n")
 }
 
 func (kademlia *Kademlia) GetCommand(network Network, hash string) {
-	// TODO
-	fmt.Printf("This should return a value!\n")
+	value := kademlia.findValue(network, hash)
+	fmt.Printf(value + "\n")
 }
 
 func (kademlia *Kademlia) ExitCommand(network Network) {
@@ -36,15 +42,10 @@ func (kademlia *Kademlia) ExitCommand(network Network) {
 /*
 RPCs
  */
-func (kademlia *Kademlia) findNode(network Network, target *Contact) {
+func (kademlia *Kademlia) findNode(network Network, target string) []Contact {
 	var contacts []Contact
-	contacts,_ = kademlia.NodeLookup(network, target, "", false)
-
-	if contacts[0].ID.Equals(target.ID) {
-		// Found what you were looking for! :D
-	} else {
-		// Close enough
-	}
+	contacts,_ = kademlia.NodeLookup(network, nil, target, false)
+	return contacts
 }
 
 func (kademlia *Kademlia) findValue(network Network, hash string) string {
@@ -53,17 +54,16 @@ func (kademlia *Kademlia) findValue(network Network, hash string) string {
 	contacts, value = kademlia.NodeLookup(network, nil, hash, true)
 
 	if value == "" {
-		// No value found
 		return "No value with the hash " + hash + " was found. But " + string(len(contacts)) + " close contacts was found."
 	} else {
-		// Return value
 		return value
 	}
 }
 
-func (kademlia *Kademlia) Store(key string, value []byte) {
-	// TODO
+func (kademlia *Kademlia) Store(value []byte) string {
+	key := HashValue(value)
 	kademlia.HashTable[key] = value
+	return key
 }
 
 func (kademlia *Kademlia) Ping(network Network, destination string, sender Contact) {
