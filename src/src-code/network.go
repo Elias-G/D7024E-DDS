@@ -72,7 +72,7 @@ func (network *Network) NetworkJoin(node Kademlia, rootNode Contact) {
 	table.AddContact(rootNode)
 
 	//todo: Iterative find here
-	shortlist := network.Node.findNode(*network, &node.Me )
+	shortlist := network.Node.findNode(*network, node.Me.ID.String())
 	fmt.Print("This is length of shortlist: " + string(len(shortlist)) + "\n")
 }
 

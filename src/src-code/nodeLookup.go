@@ -2,7 +2,7 @@ package src
 
 // Sends out alpha RPCs for FindNode/FindValue and returns k closest contacts or value if found
 // TODO: Parallel requests, Timing?
-func (kademlia *Kademlia) NodeLookup(network Network, target *Contact, hash string)(contacts []Contact, value []byte) {
+func (kademlia *Kademlia) NodeLookup(network Network, target string, findValue bool)(contacts []Contact, value []byte) {
 	var table = kademlia.RoutingTable
 	var alpha = kademlia.Alpha
 	var k = kademlia.K
@@ -11,19 +11,20 @@ func (kademlia *Kademlia) NodeLookup(network Network, target *Contact, hash stri
 	var noVal []byte // If no value was found or searched for, return empty byte array
 	var targetID *KademliaID
 
-	shortList, targetID = initShortlist(table, target, hash, alpha)
+	targetID = NewKademliaID(target)
+	shortList = table.FindClosestContacts(targetID, alpha)
 	var closestNode = shortList[0].ID // current closest node to target
 
 	// TODO: Parallel?
 	for i := 0; i < alpha; i++ {
 		var contact = shortList[i]
-		if target == nil {
-			shortList, probed, value = kademlia.sendFindValueRPCs(network, &contact, hash, shortList, probed)
+		if findValue {
+			shortList, probed, value = kademlia.sendFindValueRPCs(network, &contact, target, shortList, probed)
 			if len(value) != 0 {
 				return nil, value
 			}
 		} else {
-			shortList, probed = kademlia.sendFindNodeRPCs(network, contact, target.ID, shortList, probed)
+			shortList, probed = kademlia.sendFindNodeRPCs(network, contact, targetID, shortList, probed)
 		}
 	}
 
@@ -34,45 +35,31 @@ func (kademlia *Kademlia) NodeLookup(network Network, target *Contact, hash stri
 		if len(probed) < k {
 			for i := 0; i < alpha; i++ {
 				var contact = shortList[i]
-				if contacts == nil {
-					shortList, probed, value = kademlia.sendFindValueRPCs(network, &contact, hash, shortList, probed)
+				if findValue {
+					shortList, probed, value = kademlia.sendFindValueRPCs(network, &contact, target, shortList, probed)
 					if len(value) != 0 {
 						return nil, value
 					}
 				} else {
-					shortList, probed = kademlia.sendFindNodeRPCs(network, contact, target.ID, shortList, probed)
+					shortList, probed = kademlia.sendFindNodeRPCs(network, contact, targetID, shortList, probed)
 				}
 			}
 		} else { // if more than k nodes has been successfully probed, send RPCs to k closest (not yet probed)
 			for i := 0; i < k; i++ {
 				var contact = shortList[i]
-				if contacts == nil {
-					shortList, probed, value = kademlia.sendFindValueRPCs(network, &contact, hash, shortList, probed)
+				if findValue {
+					shortList, probed, value = kademlia.sendFindValueRPCs(network, &contact, target, shortList, probed)
 					if len(value) != 0 {
 						return nil, value
 					}
 				} else {
-					shortList, probed = kademlia.sendFindNodeRPCs(network, contact, target.ID, shortList, probed)
+					shortList, probed = kademlia.sendFindNodeRPCs(network, contact, targetID, shortList, probed)
 				}
 			}
 		}
 	}
 
 	return contacts, noVal
-}
-
-func initShortlist(table RoutingTable, target *Contact, hash string, alpha int)([]Contact, *KademliaID) {
-	var shortList []Contact
-	var id *KademliaID
-	if target != nil {
-		id = target.ID
-		shortList = table.FindClosestContacts(id, alpha)
-	} else {
-		id = NewKademliaID(hash)
-		shortList = table.FindClosestContacts(id, alpha)
-	}
-	id = shortList[0].ID
-	return shortList, id
 }
 
 func (kademlia *Kademlia)sendFindNodeRPCs(network Network, contact Contact, id *KademliaID, shortList []Contact, probed []Contact)(newShortList []Contact, newProbed []Contact) {
@@ -109,7 +96,6 @@ func updateShortList(contacts []Contact, id *KademliaID, shortList []Contact, pr
 	return newShortList
 }
 
-// Sort shortList
 func sortContacts(id *KademliaID, unsorted []Contact)(sorted []Contact) {
 	candidates := ShortList{id, unsorted}
 	candidates.Sort()
