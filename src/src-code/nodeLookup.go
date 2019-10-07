@@ -66,15 +66,11 @@ func (kademlia *Kademlia)sendFindNodeRPCs(network Network, contact Contact, id *
 }
 
 func (kademlia *Kademlia)sendFindValueRPCs(network Network, contact Contact, id *KademliaID, shortList []Contact, probed []Contact, findValue bool)(newShortList []Contact, newProbed []Contact, value string) {
-	value = ""
-	received := FindValueRPC(network, contact.Address, id.String(), kademlia.Me)
-	var i interface {} = received
-	_, foundValue := i.(string)
-	if !foundValue {
+	value, received  := FindValueRPC(network, contact.Address, id.String(), kademlia.Me)
+
+	if value == "" {
 		newProbed = append(probed, contact)
-		//newShortList = updateShortList(received, id, shortList, probed) //todo: findvalue rpc returns a value not contacts??
-	} else {
-		value = 	"RANDOM VALUE"//received //todo ??
+		newShortList = updateShortList(received, id, shortList, probed)
 	}
 	return newShortList, newProbed, value
 }
