@@ -122,19 +122,11 @@ func (network *Network) handleConnection(conn net.Conn) { //todo: this switch sh
 			findValueResponse := readFindValueResponse(message[3:n])
 			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(findValueResponse.GetSender()))
 			network.FindValueChannels[findValueResponse.RpcID]  <- *findValueResponse
-		
-		
-			//Store
-		case bytes.Equal(header, storeReqHead): //todo: move code to own function
+		//Store
+		case bytes.Equal(header, storeReqHead):
 			storeRequest := readStoreRequest(message[3:n])
-			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(storeRequest.GetSender()))
-			// Hash value and store (key, value) pair in hashtable
-			key := HashValue(storeRequest.GetValue())
-			network.Node.Store(key, storeRequest.GetValue())
-			// Return hash
-			sendStoreResponse(storeRequest.RpcID, storeRequest.GetSender().Address, network.Node.Me, key)
-
-
+			hash := network.Node.Store(storeRequest.GetValue())
+			sendStoreResponse(storeRequest.RpcID, storeRequest.GetSender().Address, network.Node.Me, hash)
 		case bytes.Equal(header, storeResHead):
 			storeResponse := readStoreResponse(message[3:n])
 			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(storeResponse.GetSender()))
