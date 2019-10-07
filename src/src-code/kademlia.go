@@ -70,7 +70,7 @@ func (kademlia *Kademlia) Ping(network Network, destination string, sender Conta
 	var found = false
 	timer := time.AfterFunc(time.Second * 5, func() {
 		if found == false { //Node is not found within the timer, could be dead
-			//network.Node.Table.RemoveContact(sender)//todo: implement remove from bucket and make sender a contact
+			network.Node.RoutingTable.RemoveContact(sender)//todo: implement remove from bucket and make sender a contact
 			//find node contact in bucket and remove it
 			fmt.Printf("Could not ping node \n")
 			return
@@ -82,5 +82,5 @@ func (kademlia *Kademlia) Ping(network Network, destination string, sender Conta
 	found=true //if this code is reached a response came back and node is alive
 	timer.Stop() //then timer can be stopped
 	fmt.Printf(response) //print the result todo: should this be printed?
-	//network.Node.Table.AddContact(sender) //todo: make sender to contact, to add to front of bucket
+	network.Node.RoutingTable.AddContact(sender) //todo: make sender to contact, to add to front of bucket
 }

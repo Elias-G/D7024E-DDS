@@ -19,11 +19,24 @@ func NewRoutingTable(me Contact) *RoutingTable {
 	return routingTable
 }
 
+func (routingTable *RoutingTable)UpdateRoutingTable(sender Contact) bool{
+	success := routingTable.AddContact(sender)
+	if(success){
+		return true
+	}
+	return false
+
+}
+
 // AddContact add a new contact to the correct Bucket
-func (routingTable *RoutingTable) AddContact(contact Contact) {
+func (routingTable *RoutingTable) AddContact(contact Contact) bool {
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
-	bucket.AddContact(contact)
+	if(!bucket.full()){
+		bucket.AddContact(contact)
+		return true
+	}
+	return false
 }
 
 // RemoveContact remove a contact from the correct Bucket
