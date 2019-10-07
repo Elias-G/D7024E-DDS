@@ -24,11 +24,11 @@ func FindNodeRPC(network Network, destination string, targetID string, sender Co
 	return formatContactsForRead(response.Contacts) //Return the contacts
 }
 
-func FindValueRPC(network Network, destination string, targetID string, sender Contact) []byte {
+func FindValueRPC(network Network, destination string, targetID string, sender Contact) ([]byte, []Contact) {
 	rpcID := network.SendFindValueRequest(destination, targetID, sender) //send a FindValue request and store the rpcID
 	network.FindValueChannels[rpcID] = make(chan kademliaProto.FindValueResponse) //store a FindValue channel in the FindValue channels hash map with the rpcId as key
 	response := <- network.FindValueChannels[rpcID] //wait for response from the FindNode channel
-	return response.Value //todo what to return ?? contacts or value? Proto says value, find node wants value or contacts??
+	return response.GetValue(), formatContactsForRead(response.GetContacts())
 }
 
 func StoreRPC(network Network, destination string, sender Contact, data []byte) string {
@@ -68,11 +68,12 @@ func sendFindNodeResponse(rpcID string, destination string, sender Contact, cont
 	sendData(destination, dataToSend, findNodeResHead)
 }
 
-func sendFindValueResponse(rpcID string, destination string, sender Contact, value []byte) {
+func sendFindValueResponse(rpcID string, destination string, sender Contact, value []byte, contacts []Contact) {
 	res := &kademliaProto.FindValueResponse{
 		RpcID: rpcID,
 		Sender: formatContactForSend(sender),
 		Value: value,
+		Contacts: formatContactsForSend2(contacts),
 	}
 	dataToSend, err := proto.Marshal(res)
 	if err != nil {

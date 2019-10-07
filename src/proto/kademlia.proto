@@ -54,6 +54,7 @@ message FindValueResponse {
     string rpcID = 1;
     Contact sender = 2;
     bytes value = 3;
+    repeated Contact contacts = 4;
 }
 
 message Contact {

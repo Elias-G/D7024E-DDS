@@ -2,6 +2,7 @@ package src
 
 import (
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -28,36 +29,30 @@ func (kademlia *Kademlia) GetCommand(network Network, hash string) {
 }
 
 func (kademlia *Kademlia) ExitCommand(network Network) {
-	// TODO
-	fmt.Printf("This should Exit!\n")
+	os.Exit(1)
 }
 
 
 /*
 RPCs
  */
-func (kademlia *Kademlia) findNode(network Network, target *Contact) {
+func (kademlia *Kademlia) findNode(network Network, target *Contact) []Contact {
 	var contacts []Contact
-	contacts,_ = kademlia.NodeLookup(network, target, "", false)
-
-	if contacts[0].ID.Equals(target.ID) {
-		// Found what you were looking for! :D
-	} else {
-		// Close enough
-	}
+	contacts,_ = kademlia.NodeLookup(network, target, "")
+	return contacts
 }
 
 func (kademlia *Kademlia) findValue(network Network, hash string) string {
 	var contacts []Contact
-	var value string
-	contacts, value = kademlia.NodeLookup(network, nil, hash, true)
+	var value []byte
+	contacts, value = kademlia.NodeLookup(network, nil, hash)
 
-	if value == "" {
+	if len(value) == 0 {
 		// No value found
 		return "No value with the hash " + hash + " was found. But " + string(len(contacts)) + " close contacts was found."
 	} else {
 		// Return value
-		return value
+		return string(value)
 	}
 }
 
