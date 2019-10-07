@@ -44,14 +44,14 @@ RPCs
  */
 func (kademlia *Kademlia) findNode(network Network, target string) []Contact {
 	var contacts []Contact
-	contacts,_ = kademlia.NodeLookup(network, nil, target, false)
+	contacts,_ = kademlia.NodeLookup(network, target, false)
 	return contacts
 }
 
 func (kademlia *Kademlia) findValue(network Network, hash string) string {
 	var contacts []Contact
 	var value []byte
-	contacts, value = kademlia.NodeLookup(network, nil, hash)
+	contacts, value = kademlia.NodeLookup(network, hash, true)
 
 	if len(value) == 0 {
 		// No value found
