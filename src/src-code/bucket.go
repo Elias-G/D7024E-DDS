@@ -2,6 +2,7 @@ package src
 
 import (
 	"container/list"
+	//"fmt"
 )
 
 // bucket definition
@@ -18,7 +19,12 @@ func newBucket() *bucket {
 }
 
 func (bucket *bucket) RemoveContact(contact Contact) {
-	//todo: remove if it exists
+	for e := bucket.list.Front(); e != nil; e = e.Next() {
+		bucketContactID := e.Value.(Contact).ID
+		if contact.ID == bucketContactID{
+			bucket.list.Remove(e)
+		}
+	}
 }
 
 
@@ -57,7 +63,34 @@ func (bucket *bucket) GetContactAndCalcDistance(target *KademliaID) []Contact {
 	return contacts
 }
 
+func (bucket *bucket) GetContacts() []Contact {
+	var contacts []Contact
+
+	for elt := bucket.list.Front(); elt != nil; elt = elt.Next() {
+		contact := elt.Value.(Contact)
+		contacts = append(contacts, contact)
+	}
+
+	return contacts
+}
+
 // Len return the size of the bucket
 func (bucket *bucket) Len() int {
 	return bucket.list.Len()
+}
+
+
+func (bucket *bucket) full() bool {
+	return bucket.list.Len() == bucketSize
+}
+
+func (bucket *bucket)String()string{
+	list := "[ \n"
+	contacts := bucket.GetContacts()
+	for i :=0 ; i<len(contacts); i++{
+		contact := contacts[i]
+		list += contact.String()+ "\n"
+	}
+	list += " ] "
+	return list
 }

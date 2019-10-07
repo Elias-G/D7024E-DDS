@@ -36,28 +36,23 @@ func (kademlia *Kademlia) ExitCommand(network Network) {
 /*
 RPCs
  */
-func (kademlia *Kademlia) findNode(network Network, target *Contact) {
+func (kademlia *Kademlia) findNode(network Network, target *Contact) []Contact {
 	var contacts []Contact
-	contacts,_ = kademlia.NodeLookup(network, target, "", false)
-
-	if contacts[0].ID.Equals(target.ID) {
-		// Found what you were looking for! :D
-	} else {
-		// Close enough
-	}
+	contacts,_ = kademlia.NodeLookup(network, target, "")
+	return contacts
 }
 
 func (kademlia *Kademlia) findValue(network Network, hash string) string {
 	var contacts []Contact
-	var value string
-	contacts, value = kademlia.NodeLookup(network, nil, hash, true)
+	var value []byte
+	contacts, value = kademlia.NodeLookup(network, nil, hash)
 
-	if value == "" {
+	if len(value) == 0 {
 		// No value found
 		return "No value with the hash " + hash + " was found. But " + string(len(contacts)) + " close contacts was found."
 	} else {
 		// Return value
-		return value
+		return string(value)
 	}
 }
 
@@ -70,7 +65,7 @@ func (kademlia *Kademlia) Ping(network Network, destination string, sender Conta
 	var found = false
 	timer := time.AfterFunc(time.Second * 5, func() {
 		if found == false { //Node is not found within the timer, could be dead
-			//network.Node.Table.RemoveContact(sender)//todo: implement remove from bucket and make sender a contact
+			network.Node.RoutingTable.RemoveContact(sender)//todo: implement remove from bucket and make sender a contact
 			//find node contact in bucket and remove it
 			fmt.Printf("Could not ping node \n")
 			return
@@ -82,5 +77,5 @@ func (kademlia *Kademlia) Ping(network Network, destination string, sender Conta
 	found=true //if this code is reached a response came back and node is alive
 	timer.Stop() //then timer can be stopped
 	fmt.Printf(response) //print the result todo: should this be printed?
-	//network.Node.Table.AddContact(sender) //todo: make sender to contact, to add to front of bucket
+	network.Node.RoutingTable.AddContact(sender) //todo: make sender to contact, to add to front of bucket
 }
