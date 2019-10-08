@@ -1,6 +1,9 @@
 package src
 
-import "crypto/sha1"
+import (
+	"crypto/sha1"
+	"encoding/hex"
+)
 
 type Storage struct{}
 
@@ -11,7 +14,7 @@ func InitTable() (Table map[string][]byte) {
 
 func HashValue(value []byte) (key string) {
 	hash := sha1.New()
-	hash.Write(value)
-	key = string(hash.Sum(nil))
+	v := hash.Sum(value)
+	key = hex.EncodeToString(v)
 	return key
 }
