@@ -40,22 +40,28 @@ func NewNetwork(node Kademlia) *Network {
 }
 
 func (network *Network) Listen(address string) {
-	udpAddr, err := net.ResolveUDPAddr("udp", address)
+	udpAddr, err := net.ResolveUDPAddr("udp4", address)
+
+	fmt.Print(udpAddr)
 
 	if err != nil {
 		log.Printf(err.Error())
 		return
 	}
 
-	serverConn, _ := net.ListenUDP("udp", udpAddr)// &net.UDPAddr{IP:[]byte{0,0,0,0},Port:5000,Zone:""})
+	serverConn, err := net.ListenUDP("udp", udpAddr)// &net.UDPAddr{IP:[]byte{0,0,0,0},Port:5000,Zone:""})
+	if err != nil {
+		log.Printf(err.Error())
+		return
+	}
 	defer serverConn.Close()
 	for {
-		go network.handleConnection(*serverConn) //pass connection to switch
+		network.handleConnection(*serverConn) //pass connection to switch
 	}
 }
 
 func sendData(destination string, dataToSend []byte, header []byte) {
-	udpAddr, err := net.ResolveUDPAddr("udp", destination)
+	udpAddr, err := net.ResolveUDPAddr("udp4", destination)
 
 	if err != nil {
 		log.Printf(err.Error())
@@ -87,12 +93,13 @@ func (network *Network) NetworkJoin(node Kademlia, rootNode Contact) {
 }
 
 func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch should contain as little code as possible, try to move functionality/logic to help functions
-	message := make([]byte, 512) //Buffer to store message received in
+	message := make([]byte, 1024) //Buffer to store message received in
 	n, _ , err := conn.ReadFromUDP(message) //read incoming messages
 	if err != nil { //Error handling
 		log.Fatal(err)
 	}
 	header := message[:3] //parse the header
+	fmt.Print(header)
 	switch {
 		//Ping
 		case bytes.Equal(header, pingReqHead):
