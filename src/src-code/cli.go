@@ -58,6 +58,10 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) {
 		for _, contact := range contacts {
 			fmt.Printf("Address: " + contact.Address + "\n")
 		}
+	case "hashtable":
+		fmt.Print(kademlia.HashTable)
+	case "store":
+		(*Kademlia).Store(&kademlia,[]byte("piggy"))
 	default:
 		fmt.Print("Unknown command " + input[0] + ", try again\n")
 	}

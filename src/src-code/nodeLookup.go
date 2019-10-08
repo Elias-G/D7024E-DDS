@@ -1,11 +1,13 @@
 package src
 
+import "fmt"
+
 // Sends out alpha RPCs for FindNode/FindValue and returns k closest contacts or value if found
 // TODO: Parallel requests, Timing?
 func (kademlia *Kademlia) NodeLookup(network Network, target string, findValue bool)(contacts []Contact, value []byte) {
 	var table = kademlia.RoutingTable
 	var alpha = kademlia.Alpha
-	var k = kademlia.K
+	//var k = kademlia.K
 	var shortList []Contact
 	var probed []Contact // keep track of contacts that have already been probed
 	var noVal []byte // If no value was found or searched for, return empty byte array
@@ -13,7 +15,8 @@ func (kademlia *Kademlia) NodeLookup(network Network, target string, findValue b
 
 	targetID = NewKademliaID(target)
 	shortList = table.FindClosestContacts(targetID, alpha)
-	var closestNode = shortList[0].ID // current closest node to target
+	fmt.Printf("SHORTLIST, findClosestContact, nodeLookup: " + printContacts(shortList))
+	//var closestNode = shortList[0].ID // current closest node to target
 
 	// TODO: Parallel?
 	for i := 0; i < alpha; i++ {
@@ -25,11 +28,12 @@ func (kademlia *Kademlia) NodeLookup(network Network, target string, findValue b
 			}
 		} else {
 			shortList, probed = kademlia.sendFindNodeRPCs(network, contact, targetID, shortList, probed)
+			fmt.Printf("SHORTLIST, sendFindNodeRPCs, nodeLookup: " + printContacts(shortList) + "\n")
 		}
 	}
 
 	// While recent responses are closer than closestNode, send new RPCs
-	for shortList[0].ID.CalcDistance(targetID).Less(closestNode.CalcDistance(targetID)) {
+	/*for shortList[0].ID.CalcDistance(targetID).Less(closestNode.CalcDistance(targetID)) {
 		closestNode = shortList[0].ID
 		// if less than k nodes has been successfully probed
 		if len(probed) < k {
@@ -57,16 +61,26 @@ func (kademlia *Kademlia) NodeLookup(network Network, target string, findValue b
 				}
 			}
 		}
-	}
+	}*/
+	contacts=shortList
+
+	fmt.Printf("CONTACTS, nodeLookup: " + printContacts(contacts) + "\n")
 
 	return contacts, noVal
 }
 
 func (kademlia *Kademlia)sendFindNodeRPCs(network Network, contact Contact, id *KademliaID, shortList []Contact, probed []Contact)(newShortList []Contact, newProbed []Contact) {
 	var received = FindNodeRPC(network, contact.Address, id.String(), kademlia.Me)
+
+
+	fmt.Printf("RECEIVED, nodeLookup, sendFindNodeRPCs: " + printContacts(received) + "\n")
 	newProbed = append(probed, contact)
 	newShortList = updateShortList(received, id, shortList, probed)
-	return newShortList, newProbed
+	//fmt.Printf("NEWSHORTLIST, nodeLookup, sendFindNodeRPCs: " + printContacts(newShortList) + "\n")
+	//fmt.Printf("NEWPROBED, nodeLookup, sendFindNodeRPCs: " + printContacts(newProbed) + "\n")
+	//return newShortList, newProbed
+
+	return received, newProbed
 }
 
 func (kademlia *Kademlia)sendFindValueRPCs(network Network, contact *Contact, hash string, shortList []Contact, probed []Contact)(newShortList []Contact, newProbed []Contact, value []byte) {

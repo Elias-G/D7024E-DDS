@@ -126,7 +126,7 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 
 		case bytes.Equal(header, findNodeResHead):
 			findNodeResponse := readFindNodeResponse(message[3:n])
-			fmt.Printf("Findnode response Request ID: " + findNodeResponse.GetRpcID() + " from sender: " + findNodeResponse.GetSender().Address + "\n")
+			fmt.Printf("Findnode response Request ID: " + findNodeResponse.GetRpcID() + " from sender: " + findNodeResponse.GetSender().Address + " With contacts: " + printContacts(formatContactsForRead(findNodeResponse.GetContacts())) + "\n")
 			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(findNodeResponse.GetSender()))
 			network.FindNodeChannels[findNodeResponse.RpcID]  <- *findNodeResponse
 		//Find Value
@@ -211,4 +211,12 @@ func CreateNode(port int, ip string, id *KademliaID) Contact {
 	address := ip + ":" + strconv.Itoa(port)
 	me := NewContact(id, address)
 	return me
+}
+
+func printContacts(contacts []Contact) string {
+	s := ""
+	for _, contact := range contacts {
+		s += contact.Address + ", "
+	}
+	return s
 }

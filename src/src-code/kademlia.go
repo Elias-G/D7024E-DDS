@@ -3,6 +3,7 @@ package src
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -22,8 +23,11 @@ func (kademlia *Kademlia) PutCommand(network Network, value []byte) {
 	hash := HashValue(value)
 	nodes := kademlia.findNode(network, hash)
 
+	fmt.Printf("Nodes found: " + strconv.Itoa(len(nodes)) + "\n")
+
 	for _, node := range nodes {
 		StoreRPC(network, node.Address, kademlia.Me, value)
+		fmt.Printf("Sending " + string(value) + " to " + node.Address + " from " + kademlia.Me.Address + "\n")
 	}
 
 	fmt.Printf(hash + "\n")
