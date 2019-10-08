@@ -40,21 +40,31 @@ func NewNetwork(node Kademlia) *Network {
 }
 
 func (network *Network) Listen(address string) {
-	ln, err := net.Listen("tcp", address) //Listener
+	udpAddr, err := net.ResolveUDPAddr("udp", address)
+
 	if err != nil {
-		panic(err)
+		log.Printf(err.Error())
+		return
 	}
+
+	serverConn, _ := net.ListenUDP("udp", udpAddr)// &net.UDPAddr{IP:[]byte{0,0,0,0},Port:5000,Zone:""})
+	defer serverConn.Close()
 	for {
-		conn, err := ln.Accept() //accept incoming connection
-		if err != nil {
-			panic(err)
-		}
-		go network.handleConnection(conn) //pass connection to switch
+		go network.handleConnection(*serverConn) //pass connection to switch
 	}
 }
 
 func sendData(destination string, dataToSend []byte, header []byte) {
-	conn, err := net.Dial("tcp", destination)
+	udpAddr, err := net.ResolveUDPAddr("udp", destination)
+
+	if err != nil {
+		log.Printf(err.Error())
+		return
+	}
+
+	conn, err := net.DialUDP("udp", nil, udpAddr)
+	defer conn.Close()
+
 	if err != nil {
 		log.Printf(err.Error())
 		return
@@ -76,9 +86,9 @@ func (network *Network) NetworkJoin(node Kademlia, rootNode Contact) {
 	fmt.Print("This is length of shortlist: " + string(len(shortlist)) + "\n")
 }
 
-func (network *Network) handleConnection(conn net.Conn) { //todo: this switch should contain as little code as possible, try to move functionality/logic to help functions
+func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch should contain as little code as possible, try to move functionality/logic to help functions
 	message := make([]byte, 512) //Buffer to store message received in
-	n, err := conn.Read(message) //read incoming messages
+	n, _ , err := conn.ReadFromUDP(message) //read incoming messages
 	if err != nil { //Error handling
 		log.Fatal(err)
 	}
