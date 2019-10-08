@@ -31,6 +31,7 @@ func (kademlia *Kademlia) PutCommand(network Network, value []byte) {
 	}
 
 	fmt.Printf(hash + "\n")
+	fmt.Printf("Recieved hash with lenght " + strconv.Itoa(len(hash)) + "\n")
 }
 
 func (kademlia *Kademlia) GetCommand(network Network, hash string) {
@@ -59,7 +60,7 @@ func (kademlia *Kademlia) findValue(network Network, hash string) string {
 
 	if len(value) == 0 {
 		// No value found
-		return "No value with the hash " + hash + " was found. But " + string(len(contacts)) + " close contacts was found."
+		return "No value with the hash " + hash + " was found. But " + strconv.Itoa(len(contacts)) + " close contacts was found."
 	} else {
 		// Return value
 		return string(value)

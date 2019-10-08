@@ -89,7 +89,12 @@ func (network *Network) NetworkJoin(node Kademlia, rootNode Contact) {
 
 	//todo: Iterative find here
 	shortlist := network.Node.findNode(*network, node.Me.ID.String())
-	fmt.Print("This is length of shortlist: " + string(len(shortlist)) + "\n")
+	for _, contact := range shortlist {
+		if contact.Address != node.Me.Address {
+			table.AddContact(contact)
+		}
+	}
+	fmt.Print("This is length of shortlist: " + strconv.Itoa(len(shortlist)) + "\n")
 }
 
 func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch should contain as little code as possible, try to move functionality/logic to help functions
@@ -100,6 +105,7 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 	}
 	header := message[:3] //parse the header
 	fmt.Print(header)
+	fmt.Print("\n")
 	switch {
 		//Ping
 		case bytes.Equal(header, pingReqHead):
@@ -126,7 +132,7 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 
 		case bytes.Equal(header, findNodeResHead):
 			findNodeResponse := readFindNodeResponse(message[3:n])
-			fmt.Printf("Findnode response Request ID: " + findNodeResponse.GetRpcID() + " from sender: " + findNodeResponse.GetSender().Address + " With contacts: " + printContacts(formatContactsForRead(findNodeResponse.GetContacts())) + "\n")
+			//fmt.Printf("Findnode response Request ID: " + findNodeResponse.GetRpcID() + " from sender: " + findNodeResponse.GetSender().Address + " With contacts: " + printContacts(formatContactsForRead(findNodeResponse.GetContacts())) + "\n")
 			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(findNodeResponse.GetSender()))
 			network.FindNodeChannels[findNodeResponse.RpcID]  <- *findNodeResponse
 		//Find Value

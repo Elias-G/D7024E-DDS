@@ -9,7 +9,7 @@ import (
 )
 
 //program variables
-var k = 20
+var k = 2
 var alpha = 3
 var rootId = src.NewKademliaID("0fda68927f2b2ff836f73578db0fa54c29f7fd92")
 var port = 5000
