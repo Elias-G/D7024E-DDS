@@ -9,7 +9,7 @@ func (kademlia *Kademlia) NodeLookup(network Network, target string, findValue b
 	var alpha = kademlia.Alpha
 	var shortList []Contact
 	var probed []Contact // keep track of contacts that have already been probed
-	var noVal []byte // If no value was found or searched for, return empty byte array
+	//var noVal []byte // If no value was found or searched for, return empty byte array
 	var targetID *KademliaID
 
 	targetID = NewKademliaID(target)
@@ -34,8 +34,11 @@ func (kademlia *Kademlia) NodeLookup(network Network, target string, findValue b
 	contacts, value = kademlia.iterativeLookup(network, shortList, probed, target, *targetID, closestNode, findValue, value)
 
 	fmt.Printf("CONTACTS, nodeLookup: " + printContacts(contacts) + "\n")
-
-	return contacts[0:network.Node.K], noVal
+	if network.Node.K < len(contacts) {
+		return contacts[0:network.Node.K], value
+	} else {
+		return contacts, value
+	}
 }
 
 func (kademlia *Kademlia) iterativeLookup(network Network, shortList []Contact, probed []Contact, target string, targetID KademliaID, closestNode *KademliaID, findValue bool, value []byte) ([]Contact, []byte) {

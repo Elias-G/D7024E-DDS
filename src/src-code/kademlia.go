@@ -56,7 +56,11 @@ func (kademlia *Kademlia) findNode(network Network, target string) []Contact {
 func (kademlia *Kademlia) findValue(network Network, hash string) string {
 	var contacts []Contact
 	var value []byte
-	contacts, value = kademlia.NodeLookup(network, hash, true)
+
+	value = kademlia.Find(hash)
+	if len(value) == 0 {
+		contacts, value = kademlia.NodeLookup(network, hash, true)
+	}
 
 	if len(value) == 0 {
 		// No value found
@@ -71,6 +75,11 @@ func (kademlia *Kademlia) Store(value []byte) string {
 	key := HashValue(value)
 	kademlia.HashTable[key] = value
 	return key
+}
+
+func (kademlia *Kademlia) Find(key string) []byte {
+	value := kademlia.HashTable[key]
+	return value
 }
 
 func (kademlia *Kademlia) Ping(network Network, destination string, sender Contact) {

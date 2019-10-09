@@ -188,7 +188,7 @@ func (network *Network) addContact(contact Contact){
 }
 
 func (network *Network) updateRoutingTable(contact Contact) {
-	if network.Node.Me.ID.Equals(contact.ID) {
+	if !network.Node.Me.ID.Equals(contact.ID) {
 		network.Node.RoutingTable.UpdateRoutingTable(contact)
 	}
 }

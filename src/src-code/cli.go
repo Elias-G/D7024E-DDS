@@ -65,6 +65,7 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) {
 		}
 	case "hashtable":
 		fmt.Print(kademlia.HashTable)
+		fmt.Printf("\n")
 	case "store":
 		(*Kademlia).Store(&kademlia,[]byte("piggy"))
 	case "ip":
