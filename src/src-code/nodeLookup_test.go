@@ -1,7 +1,6 @@
 package src
 
 import (
-	"strconv"
 	"testing"
 )
 
@@ -21,7 +20,7 @@ func TestSortContacts(t *testing.T) {
 func TestUpdateShortList(t *testing.T) {
 	lenContacts := 10
 	lenShortList := 10
-	nrOfProbed := 3
+	nrOfProbed := 4
 
 	targetID := NewRandomKademliaID()
 	contacts := GenerateContacts(lenContacts, targetID)
@@ -41,7 +40,8 @@ func TestUpdateShortList(t *testing.T) {
 			}
 		}
 	}
-	if len(got) != (lenContacts + lenShortList - nrOfProbed) {
-		t.Errorf("updateShortList failded, wrong length, length is " + strconv.Itoa(len(got)))
+	wantedLen := lenContacts + lenShortList - nrOfProbed
+	if len(got) != wantedLen {
+		t.Errorf("updateShortList failded, wrong length, wanted %v, got %v", wantedLen, len(got))
 	}
 }

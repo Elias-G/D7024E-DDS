@@ -35,7 +35,7 @@ func (kademlia *Kademlia) NodeLookup(network Network, target string, findValue b
 
 	fmt.Printf("CONTACTS, nodeLookup: " + printContacts(contacts) + "\n")
 
-	return contacts, noVal
+	return contacts[0:network.Node.K], noVal
 }
 
 func (kademlia *Kademlia) iterativeLookup(network Network, shortList []Contact, probed []Contact, target string, targetID KademliaID, closestNode *KademliaID, findValue bool, value []byte) ([]Contact, []byte) {
@@ -96,19 +96,23 @@ func (kademlia *Kademlia)sendFindValueRPCs(network Network, contact *Contact, ha
 func updateShortList(contacts []Contact, id *KademliaID, shortList []Contact, probed []Contact)(newShortList []Contact) {
 	newShortList = shortList
 	for _, contact := range contacts {
-		var alreadyProbed = false
-		for _, used := range probed {
-			if contact.ID.Equals(used.ID) {
-				alreadyProbed = true
-				break
-			}
-		}
-		if alreadyProbed == false {
+		alreadyProbed := inList(contact, probed)
+		alreadyInShortList := inList(contact, shortList)
+		if alreadyProbed == false && alreadyInShortList == false {
 			newShortList = append(newShortList, contact)
 		}
 	}
 	newShortList = sortContacts(id, newShortList)
 	return newShortList
+}
+
+func inList(contact Contact, list []Contact) bool {
+	for _, c := range list {
+		if c.ID.Equals(contact.ID) {
+			return false
+		}
+	}
+	return true
 }
 
 func sortContacts(id *KademliaID, unsorted []Contact)(sorted []Contact) {
