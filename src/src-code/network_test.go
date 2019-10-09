@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func generateContacts(nrOfContacts int, id *KademliaID)(contacts []Contact) {
+func GenerateContacts(nrOfContacts int, id *KademliaID)(contacts []Contact) {
 	for i := 0; i < nrOfContacts; i++ {
 		contact := NewContact(NewRandomKademliaID(), "Address" + string(i))
 		contact.CalcDistance(id)
@@ -293,7 +293,7 @@ func Test_sortContacts(t *testing.T) {
 	const nrOfContacts = 10
 	const k = 8
 	id := NewRandomKademliaID()
-	contacts := generateContacts(nrOfContacts, id)
+	contacts := GenerateContacts(nrOfContacts, id)
 
 	got := sortContacts(id, contacts)
 

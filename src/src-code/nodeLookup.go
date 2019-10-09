@@ -7,7 +7,6 @@ import "fmt"
 func (kademlia *Kademlia) NodeLookup(network Network, target string, findValue bool)(contacts []Contact, value []byte) {
 	var table = kademlia.RoutingTable
 	var alpha = kademlia.Alpha
-	//var k = kademlia.K
 	var shortList []Contact
 	var probed []Contact // keep track of contacts that have already been probed
 	var noVal []byte // If no value was found or searched for, return empty byte array
@@ -33,8 +32,6 @@ func (kademlia *Kademlia) NodeLookup(network Network, target string, findValue b
 	}
 
 	contacts, value = kademlia.iterativeLookup(network, shortList, probed, target, *targetID, closestNode, findValue, value)
-
-	contacts = shortList
 
 	fmt.Printf("CONTACTS, nodeLookup: " + printContacts(contacts) + "\n")
 
@@ -97,15 +94,17 @@ func (kademlia *Kademlia)sendFindValueRPCs(network Network, contact *Contact, ha
 }
 
 func updateShortList(contacts []Contact, id *KademliaID, shortList []Contact, probed []Contact)(newShortList []Contact) {
+	newShortList = shortList
 	for _, contact := range contacts {
 		var alreadyProbed = false
 		for _, used := range probed {
 			if contact.ID.Equals(used.ID) {
 				alreadyProbed = true
+				break
 			}
 		}
-		if !alreadyProbed {
-			newShortList = append(shortList, contact)
+		if alreadyProbed == false {
+			newShortList = append(newShortList, contact)
 		}
 	}
 	newShortList = sortContacts(id, newShortList)
