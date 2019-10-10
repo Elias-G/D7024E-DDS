@@ -29,7 +29,6 @@ func (kademlia *Kademlia) PutCommand(network Network, value []byte) {
 		StoreRPC(network, node.Address, kademlia.Me, value)
 		fmt.Printf("Sending " + string(value) + " to " + node.Address + " from " + kademlia.Me.Address + "\n")
 	}
-
 	fmt.Printf(hash + "\n")
 	fmt.Printf("Recieved hash with lenght " + strconv.Itoa(len(hash)) + "\n")
 }
