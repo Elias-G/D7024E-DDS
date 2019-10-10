@@ -82,14 +82,18 @@ func sendData(destination string, dataToSend []byte, header []byte) {
 }
 
 func (network *Network) NetworkJoin(node Kademlia, rootNode Contact) {
-	var table = node.RoutingTable
 	//var alpha = node.Alpha
 	rootNode.CalcDistance(node.Me.ID)
-	table.AddContact(rootNode)
+	network.addContact(rootNode)
 
 	//todo: Iterative find here
 	shortlist := network.Node.findNode(*network, node.Me.ID.String())
-	fmt.Print("This is length of shortlist: " + string(len(shortlist)) + "\n")
+	for _, contact := range shortlist {
+		if contact.Address != node.Me.Address {
+			network.addContact(contact)
+		}
+	}
+	fmt.Print("This is length of shortlist: " + strconv.Itoa(len(shortlist)) + "\n")
 }
 
 func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch should contain as little code as possible, try to move functionality/logic to help functions
@@ -100,6 +104,7 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 	}
 	header := message[:3] //parse the header
 	fmt.Print(header)
+	fmt.Print("\n")
 	switch {
 		//Ping
 		case bytes.Equal(header, pingReqHead):
@@ -116,28 +121,25 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 		//Find Node
 		case bytes.Equal(header, findNodeReqHead):
 			findNodeRequest := readFindNodeRequest(message[3:n])
-			success := network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(findNodeRequest.GetSender()))
-			if(!success){
-				
-			}
+			network.updateRoutingTable(formatContactForRead(findNodeRequest.GetSender()))
 			contacts := network.FindNode(findNodeRequest)
 			sendFindNodeResponse(findNodeRequest.RpcID, findNodeRequest.GetSender().Address, network.Node.Me, contacts)
 
 
 		case bytes.Equal(header, findNodeResHead):
 			findNodeResponse := readFindNodeResponse(message[3:n])
-			fmt.Printf("Findnode response Request ID: " + findNodeResponse.GetRpcID() + " from sender: " + findNodeResponse.GetSender().Address + "\n")
-			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(findNodeResponse.GetSender()))
+			//fmt.Printf("Findnode response Request ID: " + findNodeResponse.GetRpcID() + " from sender: " + findNodeResponse.GetSender().Address + " With contacts: " + printContacts(formatContactsForRead(findNodeResponse.GetContacts())) + "\n")
+			network.updateRoutingTable(formatContactForRead(findNodeResponse.GetSender()))
 			network.FindNodeChannels[findNodeResponse.RpcID]  <- *findNodeResponse
 		//Find Value
 		case bytes.Equal(header, findValueReqHead):
 			findValueReq := readFindValueRequest(message[3:n])
-			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(findValueReq.GetSender()))
+			network.updateRoutingTable(formatContactForRead(findValueReq.GetSender()))
 			value, contacts := network.FindValue(findValueReq)
 			sendFindValueResponse(findValueReq.GetRpcID(), findValueReq.GetSender().Address, network.Node.Me, value, contacts)
 		case bytes.Equal(header, findValueResHead):
 			findValueResponse := readFindValueResponse(message[3:n])
-			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(findValueResponse.GetSender()))
+			network.updateRoutingTable(formatContactForRead(findValueResponse.GetSender()))
 			network.FindValueChannels[findValueResponse.RpcID]  <- *findValueResponse
 		//Store
 		case bytes.Equal(header, storeReqHead):
@@ -157,7 +159,7 @@ func (network *Network) FindNode(findNodeRequest *kademliaProto.FindNodeRequest)
 	//Add to routing table, if it already exists it will be moved to front of bucket by add
 	var newContact = Contact{Address:findNodeRequest.GetSender().Address, ID:NewKademliaID(findNodeRequest.GetSender().NodeId)}
 	newContact.CalcDistance(network.Node.Me.ID)
-	network.Node.RoutingTable.AddContact(newContact)
+	network.addContact(newContact)
 	// List of k closest contacts to the target
 	return network.Node.RoutingTable.FindClosestContacts(targetID, network.Node.K)
 }
@@ -168,7 +170,7 @@ func (network *Network) FindValue(findValueRequest *kademliaProto.FindValueReque
 	//Add to routing table, if it already exists it will be moved to front of bucket by add
 	var newContact = Contact{Address:findValueRequest.GetSender().Address, ID:NewKademliaID(findValueRequest.GetSender().NodeId)}
 	newContact.CalcDistance(network.Node.Me.ID)
-	network.Node.RoutingTable.AddContact(newContact)
+	network.addContact(newContact)
 
 	if val, ok := network.Node.HashTable[findValueRequest.Hash]; ok {
 		value = val
@@ -177,6 +179,18 @@ func (network *Network) FindValue(findValueRequest *kademliaProto.FindValueReque
 		contacts = network.Node.RoutingTable.FindClosestContacts(hash, network.Node.K)
 	}
 	return value, contacts
+}
+
+func (network *Network) addContact(contact Contact){
+	if !network.Node.Me.ID.Equals(contact.ID) {
+		network.Node.RoutingTable.AddContact(contact)
+	}
+}
+
+func (network *Network) updateRoutingTable(contact Contact) {
+	if !network.Node.Me.ID.Equals(contact.ID) {
+		network.Node.RoutingTable.UpdateRoutingTable(contact)
+	}
 }
 
 func GetIpAddress() string {
@@ -211,4 +225,12 @@ func CreateNode(port int, ip string, id *KademliaID) Contact {
 	address := ip + ":" + strconv.Itoa(port)
 	me := NewContact(id, address)
 	return me
+}
+
+func printContacts(contacts []Contact) string {
+	s := ""
+	for _, contact := range contacts {
+		s += contact.Address + ", "
+	}
+	return s
 }

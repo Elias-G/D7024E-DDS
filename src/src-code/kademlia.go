@@ -3,6 +3,7 @@ package src
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -22,11 +23,15 @@ func (kademlia *Kademlia) PutCommand(network Network, value []byte) {
 	hash := HashValue(value)
 	nodes := kademlia.findNode(network, hash)
 
+	fmt.Printf("Nodes found: " + strconv.Itoa(len(nodes)) + "\n")
+
 	for _, node := range nodes {
 		StoreRPC(network, node.Address, kademlia.Me, value)
+		fmt.Printf("Sending " + string(value) + " to " + node.Address + " from " + kademlia.Me.Address + "\n")
 	}
 
 	fmt.Printf(hash + "\n")
+	fmt.Printf("Recieved hash with lenght " + strconv.Itoa(len(hash)) + "\n")
 }
 
 func (kademlia *Kademlia) GetCommand(network Network, hash string) {
@@ -51,11 +56,15 @@ func (kademlia *Kademlia) findNode(network Network, target string) []Contact {
 func (kademlia *Kademlia) findValue(network Network, hash string) string {
 	var contacts []Contact
 	var value []byte
-	contacts, value = kademlia.NodeLookup(network, hash, true)
+
+	value = kademlia.Find(hash)
+	if len(value) == 0 {
+		contacts, value = kademlia.NodeLookup(network, hash, true)
+	}
 
 	if len(value) == 0 {
 		// No value found
-		return "No value with the hash " + hash + " was found. But " + string(len(contacts)) + " close contacts was found."
+		return "No value with the hash " + hash + " was found. But " + strconv.Itoa(len(contacts)) + " close contacts was found."
 	} else {
 		// Return value
 		return string(value)
@@ -66,6 +75,11 @@ func (kademlia *Kademlia) Store(value []byte) string {
 	key := HashValue(value)
 	kademlia.HashTable[key] = value
 	return key
+}
+
+func (kademlia *Kademlia) Find(key string) []byte {
+	value := kademlia.HashTable[key]
+	return value
 }
 
 func (kademlia *Kademlia) Ping(network Network, destination string, sender Contact) {

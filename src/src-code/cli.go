@@ -44,7 +44,12 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) {
 	case "get":
 		if len(input)>1 {
 			hash := input[1]
-			go (*Kademlia).GetCommand(&kademlia, kadnet, hash)
+			fmt.Printf("Send hash with lenght " + strconv.Itoa(len(hash)) + "\n")
+			if len(hash) < 40 {
+				fmt.Printf("Incorrect hash, the hash must be at least 40 chars\n")
+			} else {
+				go (*Kademlia).GetCommand(&kademlia, kadnet, hash)
+			}
 		}else {
 			fmt.Printf("Get should be like this: get [hash]\n")
 		}
@@ -58,6 +63,13 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) {
 		for _, contact := range contacts {
 			fmt.Printf("Address: " + contact.Address + "\n")
 		}
+	case "hashtable":
+		fmt.Print(kademlia.HashTable)
+		fmt.Printf("\n")
+	case "store":
+		(*Kademlia).Store(&kademlia,[]byte("piggy"))
+	case "ip":
+		fmt.Printf(kademlia.Me.Address + "\n")
 	default:
 		fmt.Print("Unknown command " + input[0] + ", try again\n")
 	}
