@@ -23,10 +23,16 @@ func TestNewKademliaID(t *testing.T) {
 	NewKademliaID(key)
 }
 
-
 func TestNewKademliaID2(t *testing.T) {
-bytes, _ := hex.DecodeString("piggy")
-key := HashValue(bytes)
-fmt.Printf(strconv.Itoa(len(key)))
-NewKademliaID(key)
+	bytes, _ := hex.DecodeString("piggy")
+	key := HashValue(bytes)
+	fmt.Printf(strconv.Itoa(len(key)))
+	NewKademliaID(key)
+}
+
+func TestKademliaID_Less(t *testing.T) {
+	id := NewRandomKademliaID()
+	if id.Less(id) {
+		t.Errorf("Less failed, IDs are identical")
+	}
 }

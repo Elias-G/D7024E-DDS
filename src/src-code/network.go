@@ -110,22 +110,19 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 		case bytes.Equal(header, pingReqHead):
 			pingRequest := readPingRequest(message[3:n]) //read request
 			fmt.Printf("Ping Request ID: " + pingRequest.GetRpcID() + " from sender: " + pingRequest.GetSender().Address + " to: " +  pingRequest.GetDestination() + "\n") //print the result todo: should this be printed?
-			sendPingResponse(pingRequest.RpcID, pingRequest.GetSender().Address, network.Node.Me) //send response with rpcID from request //todo: functionality to own function
-
-
+			data := sendPingResponse(pingRequest.RpcID, network.Node.Me) //send response with rpcID from request //todo: functionality to own function
+			sendData(pingRequest.GetSender().Address, data, pingResHead)
 		case bytes.Equal(header, pingResHead):
 			pingResponse := readPingResponse(message[3:n]) //read response
 			network.PingChannels[pingResponse.RpcID]  <- *pingResponse //Get the channel with the correct rpcID from the PingChannels Hashmap in network and send the response back to that channel
-
 
 		//Find Node
 		case bytes.Equal(header, findNodeReqHead):
 			findNodeRequest := readFindNodeRequest(message[3:n])
 			network.updateRoutingTable(formatContactForRead(findNodeRequest.GetSender()))
 			contacts := network.FindNode(findNodeRequest)
-			sendFindNodeResponse(findNodeRequest.RpcID, findNodeRequest.GetSender().Address, network.Node.Me, contacts)
-
-
+			data := sendFindNodeResponse(findNodeRequest.RpcID, network.Node.Me, contacts)
+			sendData(findNodeRequest.GetSender().Address, data, findNodeResHead)
 		case bytes.Equal(header, findNodeResHead):
 			findNodeResponse := readFindNodeResponse(message[3:n])
 			//fmt.Printf("Findnode response Request ID: " + findNodeResponse.GetRpcID() + " from sender: " + findNodeResponse.GetSender().Address + " With contacts: " + printContacts(formatContactsForRead(findNodeResponse.GetContacts())) + "\n")
@@ -136,7 +133,8 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 			findValueReq := readFindValueRequest(message[3:n])
 			network.updateRoutingTable(formatContactForRead(findValueReq.GetSender()))
 			value, contacts := network.FindValue(findValueReq)
-			sendFindValueResponse(findValueReq.GetRpcID(), findValueReq.GetSender().Address, network.Node.Me, value, contacts)
+			data := sendFindValueResponse(findValueReq.GetRpcID(), network.Node.Me, value, contacts)
+			sendData(findValueReq.GetSender().Address, data, findValueResHead)
 		case bytes.Equal(header, findValueResHead):
 			findValueResponse := readFindValueResponse(message[3:n])
 			network.updateRoutingTable(formatContactForRead(findValueResponse.GetSender()))
@@ -145,7 +143,8 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 		case bytes.Equal(header, storeReqHead):
 			storeRequest := readStoreRequest(message[3:n])
 			hash := network.Node.Store(storeRequest.GetValue())
-			sendStoreResponse(storeRequest.RpcID, storeRequest.GetSender().Address, network.Node.Me, hash)
+			data := sendStoreResponse(storeRequest.RpcID, network.Node.Me, hash)
+			sendData(storeRequest.GetSender().Address, data, storeResHead)
 		case bytes.Equal(header, storeResHead):
 			storeResponse := readStoreResponse(message[3:n])
 			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(storeResponse.GetSender()))

@@ -26,10 +26,6 @@ func TestNewContact(t *testing.T) {
 			if got.ID != tt.args.ID {
 				t.Errorf("ID = %v, want %v", got.ID, tt.args.ID)
 			}
-			// TODO: Test distance
-			/*if assert.Nil(t, got.Distance) {
-				t.Errorf("Distance = %v, want %v", got.Distance, tt.args.ID)
-			}*/
 		})
 	}
 }

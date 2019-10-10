@@ -4,18 +4,6 @@ import (
 	"testing"
 )
 
-func generateShortList(nrOfContacts int)(shortList ShortList) {
-	target := NewRandomKademliaID()
-	var contacts []Contact
-
-	for i := 0; i < nrOfContacts; i++ {
-		add := "Address" + string(i)
-		contacts = append(contacts, NewContact(NewRandomKademliaID(), add))
-	}
-
-	return ShortList{target, contacts}
-}
-
 func TestShortList_Less(t *testing.T) {
 	const nrOfContacts = 10
 	shortList := generateShortList(nrOfContacts)
@@ -41,4 +29,16 @@ func TestShortList_Sort(t *testing.T) {
 			t.Errorf("Sort not working")
 		}
 	}
+}
+
+func generateShortList(nrOfContacts int)(shortList ShortList) {
+	target := NewRandomKademliaID()
+	var contacts []Contact
+
+	for i := 0; i < nrOfContacts; i++ {
+		add := "Address" + string(i)
+		contacts = append(contacts, NewContact(NewRandomKademliaID(), add))
+	}
+
+	return ShortList{target, contacts}
 }
