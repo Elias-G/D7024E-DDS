@@ -48,7 +48,7 @@ func main() {
 		print(kademlia)
 
 		go network.Listen(me.Address)
-		src.Clilisten(ip, network, *kademlia, port)
+		src.Clilisten(network, *kademlia, port)
 		//if arg == 2 then its a normal node to start
 	} else if arg == "2" {
 		var ip = src.GetIpAddress()
@@ -77,7 +77,7 @@ func main() {
 		network.NetworkJoin(*kademlia, rootNode)
 
 
-		src.Clilisten(ip, network, *kademlia, port)
+		src.Clilisten(network, *kademlia, port)
 	} else {
 		fmt.Print("Choose to be a leader(1) or a follower(2)")
 	}
