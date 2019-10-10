@@ -54,7 +54,7 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) {
 			fmt.Printf("Get should be like this: get [hash]\n")
 		}
 	case "exit":
-		go (*Kademlia).ExitCommand(&kademlia, kadnet)
+		go (*Kademlia).ExitCommand(&kademlia)
 
 	//help commands for debugging
 	case "routingtable":

@@ -39,7 +39,7 @@ func (kademlia *Kademlia) GetCommand(network Network, hash string) {
 	fmt.Printf(value + "\n")
 }
 
-func (kademlia *Kademlia) ExitCommand(network Network) {
+func (kademlia *Kademlia) ExitCommand() {
 	os.Exit(1)
 }
 
