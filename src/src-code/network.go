@@ -121,7 +121,7 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 		//Find Node
 		case bytes.Equal(header, findNodeReqHead):
 			findNodeRequest := readFindNodeRequest(message[3:n])
-			network.updateRoutingTable(formatContactForRead(findNodeRequest.GetSender()))
+			network.updateRoutingTableWithoutMe(formatContactForRead(findNodeRequest.GetSender()))
 			contacts := network.FindNode(findNodeRequest)
 			sendFindNodeResponse(findNodeRequest.RpcID, findNodeRequest.GetSender().Address, network.Node.Me, contacts)
 
@@ -129,26 +129,34 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 		case bytes.Equal(header, findNodeResHead):
 			findNodeResponse := readFindNodeResponse(message[3:n])
 			//fmt.Printf("Findnode response Request ID: " + findNodeResponse.GetRpcID() + " from sender: " + findNodeResponse.GetSender().Address + " With contacts: " + printContacts(formatContactsForRead(findNodeResponse.GetContacts())) + "\n")
-			network.updateRoutingTable(formatContactForRead(findNodeResponse.GetSender()))
+			network.updateRoutingTableWithoutMe(formatContactForRead(findNodeResponse.GetSender()))
 			network.FindNodeChannels[findNodeResponse.RpcID]  <- *findNodeResponse
+
+
 		//Find Value
 		case bytes.Equal(header, findValueReqHead):
 			findValueReq := readFindValueRequest(message[3:n])
-			network.updateRoutingTable(formatContactForRead(findValueReq.GetSender()))
+			network.updateRoutingTableWithoutMe(formatContactForRead(findValueReq.GetSender()))
 			value, contacts := network.FindValue(findValueReq)
 			sendFindValueResponse(findValueReq.GetRpcID(), findValueReq.GetSender().Address, network.Node.Me, value, contacts)
+
+
 		case bytes.Equal(header, findValueResHead):
 			findValueResponse := readFindValueResponse(message[3:n])
-			network.updateRoutingTable(formatContactForRead(findValueResponse.GetSender()))
+			network.updateRoutingTableWithoutMe(formatContactForRead(findValueResponse.GetSender()))
 			network.FindValueChannels[findValueResponse.RpcID]  <- *findValueResponse
+
+
 		//Store
 		case bytes.Equal(header, storeReqHead):
 			storeRequest := readStoreRequest(message[3:n])
 			hash := network.Node.Store(storeRequest.GetValue())
 			sendStoreResponse(storeRequest.RpcID, storeRequest.GetSender().Address, network.Node.Me, hash)
+
+
 		case bytes.Equal(header, storeResHead):
 			storeResponse := readStoreResponse(message[3:n])
-			network.Node.RoutingTable.UpdateRoutingTable(formatContactForRead(storeResponse.GetSender()))
+			network.updateRoutingTableWithoutMe(formatContactForRead(storeResponse.GetSender()))
 			network.StoreChannels[storeResponse.RpcID]  <- *storeResponse
 	}
 }
@@ -161,7 +169,10 @@ func (network *Network) FindNode(findNodeRequest *kademliaProto.FindNodeRequest)
 	newContact.CalcDistance(network.Node.Me.ID)
 	network.addContact(newContact)
 	// List of k closest contacts to the target
-	return network.Node.RoutingTable.FindClosestContacts(targetID, network.Node.K)
+	contacts := network.Node.RoutingTable.FindClosestContacts(targetID, network.Node.K)
+	contacts = dontAddRequester(contacts, formatContactForRead(findNodeRequest.GetSender())) //Don't add requester to response
+	fmt.Printf("FindNode network, contacts back: " + printContacts(contacts) + "\n")
+	return contacts
 }
 
 func (network *Network) FindValue(findValueRequest *kademliaProto.FindValueRequest)(value []byte, contacts []Contact) {
@@ -177,18 +188,28 @@ func (network *Network) FindValue(findValueRequest *kademliaProto.FindValueReque
 	} else {
 		// List of k closest contacts to the target
 		contacts = network.Node.RoutingTable.FindClosestContacts(hash, network.Node.K)
+		contacts = dontAddRequester(contacts, formatContactForRead(findValueRequest.GetSender())) //Don't add requester to response
 	}
 	return value, contacts
 }
 
+func dontAddRequester(contacts []Contact, sender Contact) []Contact {
+	for i, contact := range contacts {
+		if contact.ID == sender.ID{
+			return append(contacts[:i], contact, contacts[i+1])
+		}
+	}
+	return contacts
+}
+
 func (network *Network) addContact(contact Contact){
-	if !network.Node.Me.ID.Equals(contact.ID) {
+	if !network.Node.Me.ID.Equals(contact.ID) { //don't add yourself
 		network.Node.RoutingTable.AddContact(contact)
 	}
 }
 
-func (network *Network) updateRoutingTable(contact Contact) {
-	if !network.Node.Me.ID.Equals(contact.ID) {
+func (network *Network) updateRoutingTableWithoutMe(contact Contact) {
+	if !network.Node.Me.ID.Equals(contact.ID) { //don't add yourself
 		network.Node.RoutingTable.UpdateRoutingTable(contact)
 	}
 }
