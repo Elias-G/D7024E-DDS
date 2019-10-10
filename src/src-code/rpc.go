@@ -42,7 +42,7 @@ func StoreRPC(network Network, destination string, sender Contact, data []byte) 
 /*
 Functions for sending responses from Ping, Find node, Find Value and Store
 */
-func sendPingResponse(rpcID string, destination string, sender Contact) {
+func sendPingResponse(rpcID string, sender Contact) []byte {
 	res := &kademliaProto.PingResponse{
 		RpcID: rpcID,
 		Sender: formatContactForSend(sender),
@@ -52,10 +52,10 @@ func sendPingResponse(rpcID string, destination string, sender Contact) {
 	if err != nil {
 		log.Fatal("Marshal error", err)
 	}
-	sendData(destination, dataToSend, pingResHead)
+	return dataToSend
 }
 
-func sendFindNodeResponse(rpcID string, destination string, sender Contact, contacts []Contact) {
+func sendFindNodeResponse(rpcID string, sender Contact, contacts []Contact) []byte {
 	res := &kademliaProto.FindNodeResponse{
 		RpcID: rpcID,
 		Sender: formatContactForSend(sender),
@@ -65,10 +65,10 @@ func sendFindNodeResponse(rpcID string, destination string, sender Contact, cont
 	if err != nil {
 		log.Fatal("Marshal error", err)
 	}
-	sendData(destination, dataToSend, findNodeResHead)
+	return dataToSend
 }
 
-func sendFindValueResponse(rpcID string, destination string, sender Contact, value []byte, contacts []Contact) {
+func sendFindValueResponse(rpcID string, sender Contact, value []byte, contacts []Contact) []byte {
 	res := &kademliaProto.FindValueResponse{
 		RpcID: rpcID,
 		Sender: formatContactForSend(sender),
@@ -79,12 +79,10 @@ func sendFindValueResponse(rpcID string, destination string, sender Contact, val
 	if err != nil {
 		log.Fatal("Marshal error", err)
 	}
-
-	sendData(destination, dataToSend, findValueResHead)
-
+	return dataToSend
 }
 
-func sendStoreResponse(rpcID string, destination string, sender Contact, hash string) {
+func sendStoreResponse(rpcID string, sender Contact, hash string) []byte {
 	res := &kademliaProto.StoreResponse{
 		RpcID: rpcID,
 		Sender: formatContactForSend(sender),
@@ -94,8 +92,7 @@ func sendStoreResponse(rpcID string, destination string, sender Contact, hash st
 	if err != nil {
 		log.Fatal("Marshal error", err)
 	}
-
-	sendData(destination, dataToSend, storeResHead)
+	return dataToSend
 }
 
 /*
@@ -258,19 +255,6 @@ func readStoreResponse(message []byte) *kademliaProto.StoreResponse {
 	return res
 }
 
-
-
-/*
-Functions for formatting a contact or a list of contacts for request or response.
- */
-func formatContactsForSend(contacts []*Contact) []*kademliaProto.Contact {
-	var sendingContacts []*kademliaProto.Contact
-	for _, contact := range contacts {
-		sendingContacts = append(sendingContacts, &kademliaProto.Contact{NodeId: contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()})
-	}
-	return sendingContacts
-}
-
 func formatContactsForSend2(contacts []Contact) []*kademliaProto.Contact {
 	var sendingContacts []*kademliaProto.Contact
 	for _, contact := range contacts {
@@ -294,4 +278,3 @@ func formatContactsForRead(contacts []*kademliaProto.Contact) []Contact{
 func formatContactForRead(contact *kademliaProto.Contact) Contact{
 	return Contact{ID:NewKademliaID(contact.NodeId), Address:contact.Address, Distance:NewKademliaID(contact.Distance)}
 }
-
