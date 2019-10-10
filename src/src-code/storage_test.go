@@ -1,7 +1,6 @@
 package src
 
 import (
-	"crypto/sha1"
 	"encoding/hex"
 	"reflect"
 	"testing"
@@ -9,12 +8,16 @@ import (
 
 func TestHashValue(t *testing.T) {
 	value,_ := hex.DecodeString("TestHash")
-	hash := sha1.New()
-	hash.Write(value)
-	want := string(hash.Sum(nil))
-	got := HashValue(value)
-	if want != got {
-		t.Errorf("HashValue() = %v, want %v", got, want)
+	hash := HashValue(value)
+	if len(hash) == 0 {
+		t.Errorf("HashValue failed, length 0")
+	}
+
+	var i interface {} = hash
+
+	_,ok := i.(string)
+	if !ok {
+		t.Errorf("HashValue failed, did not return string")
 	}
 }
 

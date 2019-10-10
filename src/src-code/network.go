@@ -200,7 +200,7 @@ func (network *Network) FindValue(findValueRequest *kademliaProto.FindValueReque
 func dontAddRequester(contacts []Contact, sender Contact) []Contact {
 	for i, contact := range contacts {
 		if contact.ID == sender.ID{
-			return append(contacts[:i], contact, contacts[i+1])
+			return append(contacts[:i], contacts[i+1])
 		}
 	}
 	return contacts
@@ -242,7 +242,6 @@ func GetIpAddress() string {
 			}
 		}
 	}
-
 	return ""
 }
 
