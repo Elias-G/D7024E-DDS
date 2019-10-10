@@ -172,6 +172,67 @@ func Test_formatContactsForRead(t *testing.T) {
 	}
 }
 
+func Test_formatContactForRead(t *testing.T) {
+	contact := generateContactsForReading(1, NewRandomKademliaID())[0]
+	var i interface {} = formatContactForRead(contact)
+
+	_, ok := i.(Contact)
+	if !ok {
+		t.Errorf("formatContactForRead: Conversion failed")
+	}
+}
+
+func Test_SendPingRequest(t *testing.T) {
+	destination := "Address"
+	contact := GenerateContacts(1, NewRandomKademliaID())[0]
+
+	var i interface {} = SendPingRequest(destination, contact)
+
+	_, ok := i.(string)
+	if !ok {
+		t.Errorf("SendPingRequest: Did not return string")
+	}
+}
+
+func Test_SendFindNodeRequest(t *testing.T) {
+	destination := "Address"
+	contact := GenerateContacts(1, NewRandomKademliaID())[0]
+	targetID := NewRandomKademliaID().String()
+
+	var i interface {} = SendFindNodeRequest(destination, targetID, contact)
+
+	_, ok := i.(string)
+	if !ok {
+		t.Errorf("SendFindNodeRequest: Did not return string")
+	}
+}
+
+func Test_SendFindValueRequest(t *testing.T) {
+	destination := "Address"
+	contact := GenerateContacts(1, NewRandomKademliaID())[0]
+	hash := "asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer"
+
+	var i interface {} = SendFindValueRequest(destination, hash, contact)
+
+	_, ok := i.(string)
+	if !ok {
+		t.Errorf("SendFindValueRequest: Did not return string")
+	}
+}
+
+func Test_SendStoreRequest(t *testing.T) {
+	destination := "Address"
+	contact := GenerateContacts(1, NewRandomKademliaID())[0]
+	data,_ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
+
+	var i interface {} = SendStoreRequest(destination, contact, data)
+
+	_, ok := i.(string)
+	if !ok {
+		t.Errorf("SendStoreRequest: Did not return string")
+	}
+}
+
 func generateContactsForReading(nrOfContacts int, id *KademliaID)(contacts []*kademliaProto.Contact) {
 	for i := 0; i < nrOfContacts; i++ {
 		contact := NewContact(NewRandomKademliaID(), "Address" + string(i))
@@ -182,12 +243,3 @@ func generateContactsForReading(nrOfContacts int, id *KademliaID)(contacts []*ka
 	return contacts
 }
 
-func Test_formatContactForRead(t *testing.T) {
-	contact := generateContactsForReading(1, NewRandomKademliaID())[0]
-	var i interface {} = formatContactForRead(contact)
-
-	_, ok := i.(Contact)
-	if !ok {
-		t.Errorf("formatContactForReading: Conversion failed")
-	}
-}
