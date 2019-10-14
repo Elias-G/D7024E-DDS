@@ -60,6 +60,7 @@ func (kademlia *Kademlia) iterativeLookup(network Network, shortList []Contact, 
 					return nil, value
 				}
 			} else {
+				fmt.Printf("SEND RPC IN ITERATIVE LOOKUP")
 				shortList, probed = kademlia.sendFindNodeRPCs(network, contact, &targetID, shortList, probed)
 				fmt.Printf("SHORTLIST Iterated, sendFindNodeRPCs, iterativeLookup: " + printContacts(shortList) + " contact: " + contact.Address + "\n")
 			}

@@ -9,8 +9,8 @@ import (
 )
 
 //program variables
-var k = 5
-var alpha = 3
+var k = 3
+var alpha = 1
 var rootId = src.NewKademliaID("0fda68927f2b2ff836f73578db0fa54c29f7fd92")
 var port = 5000
 
@@ -38,7 +38,7 @@ func main() {
 			RoutingTable:     *table,
 			Me:        me,
 			K:         k,
-			Alpha:     1,
+			Alpha:     alpha,
 			HashTable: hashTable,
 			PingWait:  20000000000,
 		}
@@ -66,7 +66,7 @@ func main() {
 			RoutingTable:     *table,
 			Me:        me,
 			K:         k,
-			Alpha:     1,
+			Alpha:     alpha,
 			HashTable: hashTable,
 		}
 

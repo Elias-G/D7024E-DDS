@@ -32,15 +32,15 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) string {
 	case "ping":
 		if len(input)>1 {
 			dest := input[1] + ":" + strconv.Itoa(port)
-			go (*Kademlia).Ping(&kademlia, kadnet, dest, kademlia.Me)
-		}else {
+			(*Kademlia).Ping(&kademlia, kadnet, dest, kademlia.Me)
+		} else {
 			answer = "Ping should be like this: ping [ip address]"
 		}
 	case "put":
 		if len(input)>1 {
 			value := []byte(input[1])
-			go (*Kademlia).PutCommand(&kademlia, kadnet, value)
-		}else {
+			(*Kademlia).PutCommand(&kademlia, kadnet, value)
+		} else {
 			answer = "Put should be like this: put [value]"
 		}
 	case "get":
@@ -50,13 +50,13 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) string {
 			if len(hash) < 40 {
 				answer = "Incorrect hash, the hash must be at least 40 chars"
 			} else {
-				go (*Kademlia).GetCommand(&kademlia, kadnet, hash)
+				(*Kademlia).GetCommand(&kademlia, kadnet, hash)
 			}
-		}else {
+		} else {
 			answer = "Get should be like this: get [hash]"
 		}
 	case "exit":
-		go (*Kademlia).ExitCommand(&kademlia)
+		(*Kademlia).ExitCommand(&kademlia)
 
 	//help commands for debugging
 	case "routingtable":

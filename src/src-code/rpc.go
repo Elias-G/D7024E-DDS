@@ -1,6 +1,7 @@
 package src
 
 import (
+	"fmt"
 	"github.com/golang/protobuf/proto"
 	"log"
 	kademliaProto "proto"
@@ -33,6 +34,7 @@ func FindValueRPC(network Network, destination string, targetID string, sender C
 
 func StoreRPC(network Network, destination string, sender Contact, data []byte) string {
 	rpcID := SendStoreRequest(destination, sender, data) //send a Store request and store the rpcID
+	fmt.Printf("Make channel in store " + rpcID + "\n" )
 	network.StoreChannels[rpcID] = make(chan kademliaProto.StoreResponse) //store a Store channel in the Store channels hash map with the rpcId as key
 	response := <- network.StoreChannels[rpcID] //wait for response from the Store channel
 	return response.Hash //return the hash

@@ -128,10 +128,13 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
     
     
 		case bytes.Equal(header, findNodeResHead):
+			fmt.Printf("Find node response header switch\n")
 			findNodeResponse := readFindNodeResponse(message[3:n])
 			//fmt.Printf("Findnode response Request ID: " + findNodeResponse.GetRpcID() + " from sender: " + findNodeResponse.GetSender().Address + " With contacts: " + printContacts(formatContactsForRead(findNodeResponse.GetContacts())) + "\n")
 			network.updateRoutingTableWithoutMe(formatContactForRead(findNodeResponse.GetSender()))
+			fmt.Printf("Before response find node\n")
 			network.FindNodeChannels[findNodeResponse.RpcID]  <- *findNodeResponse
+			fmt.Printf("After find node response\n")
 
 
 		//Find Value
@@ -159,9 +162,21 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 
     
 		case bytes.Equal(header, storeResHead):
+			fmt.Printf("Store response header switch\n")
 			storeResponse := readStoreResponse(message[3:n])
 			network.updateRoutingTableWithoutMe(formatContactForRead(storeResponse.GetSender()))
+			fmt.Printf("Before response store, looking for " + storeResponse.RpcID + "\n")
+			testChannels(network.StoreChannels, storeResponse.RpcID)
 			network.StoreChannels[storeResponse.RpcID]  <- *storeResponse
+			fmt.Printf("After store response\n")
+	}
+}
+
+func testChannels(hashmap map[string]chan kademliaProto.StoreResponse, rpcId string) {
+	if hashmap[rpcId] != nil {
+		fmt.Printf("Channel not null\n")
+	}   else {
+		fmt.Printf("Channel is null\n")
 	}
 }
 
