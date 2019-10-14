@@ -11,31 +11,35 @@ import (
 RPC methods for Ping, Find node, Find Value and Store
 */
 func PingRPC(network Network, destination string, sender Contact) string {
-	rpcID := SendPingRequest(destination, sender) //send a ping request and store the rpcID
+	rpcID := NewRandomKademliaID().String()
 	network.PingChannels[rpcID] = make(chan kademliaProto.PingResponse) //store a ping channel in the ping channels hash map with the rpcId as key
+	SendPingRequest(destination, sender, rpcID) //send a ping request and store the rpcID
 	response := <- network.PingChannels[rpcID] //wait for response from the ping channel
 	responseBack := "Ping RpcID: " + response.GetRpcID() + " with Response: " + response.GetResponse() + " from sender: " + response.GetSender().Address + "\n" //format response //todo: should this be displayed to user?
 	return responseBack
 }
 
 func FindNodeRPC(network Network, destination string, targetID string, sender Contact) []Contact {
-	rpcID := SendFindNodeRequest(destination, targetID, sender) //send a FindNode request and store the rpcID
+	rpcID := NewRandomKademliaID().String()
 	network.FindNodeChannels[rpcID] = make(chan kademliaProto.FindNodeResponse) //store a FindNode channel in the FindNode channels hash map with the rpcId as key
+	SendFindNodeRequest(destination, targetID, sender, rpcID) //send a FindNode request and store the rpcID
 	response := <- network.FindNodeChannels[rpcID] //wait for response from the FindNOde channel
 	return formatContactsForRead(response.Contacts) //Return the contacts
 }
 
 func FindValueRPC(network Network, destination string, targetID string, sender Contact) ([]byte, []Contact) {
-	rpcID := SendFindValueRequest(destination, targetID, sender) //send a FindValue request and store the rpcID
+	rpcID := NewRandomKademliaID().String()
 	network.FindValueChannels[rpcID] = make(chan kademliaProto.FindValueResponse) //store a FindValue channel in the FindValue channels hash map with the rpcId as key
+	SendFindValueRequest(destination, targetID, sender, rpcID) //send a FindValue request and store the rpcID
 	response := <- network.FindValueChannels[rpcID] //wait for response from the FindNode channel
 	return response.GetValue(), formatContactsForRead(response.GetContacts())
 }
 
 func StoreRPC(network Network, destination string, sender Contact, data []byte) string {
-	rpcID := SendStoreRequest(destination, sender, data) //send a Store request and store the rpcID
+	rpcID := NewRandomKademliaID().String()
 	fmt.Printf("Make channel in store " + rpcID + "\n" )
 	network.StoreChannels[rpcID] = make(chan kademliaProto.StoreResponse) //store a Store channel in the Store channels hash map with the rpcId as key
+	SendStoreRequest(destination, sender, data, rpcID) //send a Store request and store the rpcID
 	response := <- network.StoreChannels[rpcID] //wait for response from the Store channel
 	return response.Hash //return the hash
 }
@@ -100,9 +104,9 @@ func sendStoreResponse(rpcID string, sender Contact, hash string) []byte {
 /*
 Functions for sending requests from Ping, Find node, Find Value and Store
 */
-func SendPingRequest(destination string, sender Contact) string {
+func SendPingRequest(destination string, sender Contact, rpcID string) string {
 	res := &kademliaProto.PingRequest{
-		RpcID: NewRandomKademliaID().String(),
+		RpcID: rpcID,
 		Sender:      formatContactForSend(sender),
 		Destination: destination,
 	}
@@ -115,9 +119,9 @@ func SendPingRequest(destination string, sender Contact) string {
 	return res.GetRpcID()
 }
 
-func SendFindNodeRequest(destination string, targetID string, sender Contact) string {
+func SendFindNodeRequest(destination string, targetID string, sender Contact, rpcID string) string {
 	res := &kademliaProto.FindNodeRequest{
-		RpcID: NewRandomKademliaID().String(),
+		RpcID: rpcID,
 		Sender:		formatContactForSend(sender),
 		TargetId: 	targetID,
 	}
@@ -129,9 +133,9 @@ func SendFindNodeRequest(destination string, targetID string, sender Contact) st
 	return res.GetRpcID()
 }
 
-func SendFindValueRequest(destination string, hash string, sender Contact) string {
+func SendFindValueRequest(destination string, hash string, sender Contact, rpcID string) string {
 	res := &kademliaProto.FindValueRequest{
-		RpcID: NewRandomKademliaID().String(),
+		RpcID: rpcID,
 		Sender:		formatContactForSend(sender),
 		Hash: 	hash,
 	}
@@ -143,9 +147,9 @@ func SendFindValueRequest(destination string, hash string, sender Contact) strin
 	return res.GetRpcID()
 }
 
-func SendStoreRequest(destination string, sender Contact, data []byte) string {
+func SendStoreRequest(destination string, sender Contact, data []byte, rpcID string) string {
 	res := &kademliaProto.StoreRequest{
-		RpcID: NewRandomKademliaID().String(),
+		RpcID: rpcID,
 		Sender: formatContactForSend(sender),
 		Value:  data,
 	}
