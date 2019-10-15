@@ -38,7 +38,7 @@ func main() {
 			RoutingTable:     *table,
 			Me:        me,
 			K:         k,
-			Alpha:     1,
+			Alpha:     alpha,
 			HashTable: hashTable,
 			PingWait:  20000000000,
 		}
@@ -66,7 +66,7 @@ func main() {
 			RoutingTable:     *table,
 			Me:        me,
 			K:         k,
-			Alpha:     1,
+			Alpha:     alpha,
 			HashTable: hashTable,
 		}
 
@@ -76,6 +76,7 @@ func main() {
 
 		network.NetworkJoin(*kademlia, rootNode)
 
+		fmt.Printf("I WILL LISTEN TO YOU!! :)")
 
 		src.Clilisten(network, *kademlia, port)
 	} else {

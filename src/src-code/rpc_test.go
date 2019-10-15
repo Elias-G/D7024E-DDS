@@ -186,7 +186,7 @@ func Test_SendPingRequest(t *testing.T) {
 	destination := "Address"
 	contact := GenerateContacts(1, NewRandomKademliaID())[0]
 
-	var i interface {} = SendPingRequest(destination, contact)
+	var i interface {} = SendPingRequest(destination, contact, NewRandomKademliaID().String())
 
 	_, ok := i.(string)
 	if !ok {
@@ -199,7 +199,7 @@ func Test_SendFindNodeRequest(t *testing.T) {
 	contact := GenerateContacts(1, NewRandomKademliaID())[0]
 	targetID := NewRandomKademliaID().String()
 
-	var i interface {} = SendFindNodeRequest(destination, targetID, contact)
+	var i interface {} = SendFindNodeRequest(destination, targetID, contact, NewRandomKademliaID().String())
 
 	_, ok := i.(string)
 	if !ok {
@@ -212,7 +212,7 @@ func Test_SendFindValueRequest(t *testing.T) {
 	contact := GenerateContacts(1, NewRandomKademliaID())[0]
 	hash := "asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer"
 
-	var i interface {} = SendFindValueRequest(destination, hash, contact)
+	var i interface {} = SendFindValueRequest(destination, hash, contact, NewRandomKademliaID().String())
 
 	_, ok := i.(string)
 	if !ok {
@@ -225,7 +225,7 @@ func Test_SendStoreRequest(t *testing.T) {
 	contact := GenerateContacts(1, NewRandomKademliaID())[0]
 	data,_ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
 
-	var i interface {} = SendStoreRequest(destination, contact, data)
+	var i interface {} = SendStoreRequest(destination, contact, data, NewRandomKademliaID().String())
 
 	_, ok := i.(string)
 	if !ok {
