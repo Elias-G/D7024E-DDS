@@ -134,7 +134,7 @@ func TestParse_hashtable(t *testing.T){
 	}
 }
 
-func TestParse_storerpc(t *testing.T){
+/*func TestParse_storerpc(t *testing.T){
 	node.HashTable = InitTable()
 	value := []byte("piggy")
 
@@ -153,7 +153,7 @@ func TestParse_storerpc(t *testing.T){
 	if got != want {
 		t.Errorf("TestParse_store = %v, want %v", got, want)
 	}
-}
+}*/
 
 func TestClilisten(t *testing.T){
 	Clilisten(*network, node, 5000)
