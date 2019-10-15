@@ -25,6 +25,11 @@ func (kademlia *Kademlia) PutCommand(network Network, value []byte) {
 
 	fmt.Printf("Nodes found: " + strconv.Itoa(len(nodes)) + "\n")
 
+	if network.Node.Me.ID.CalcDistance(NewKademliaID(hash)).Less(nodes[len(nodes)-1].ID.CalcDistance(NewKademliaID(hash))) { //If this node is closer than the last one in the returned list this node should replace that one
+		nodes[len(nodes)-1] = network.Node.Me
+	}
+
+
 	for _, node := range nodes {
 		StoreRPC(network, node.Address, kademlia.Me, value)
 		fmt.Printf("Sending " + string(value) + " to " + node.Address + " from " + kademlia.Me.Address + "\n")
