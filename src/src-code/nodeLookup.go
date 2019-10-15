@@ -20,7 +20,7 @@ func (kademlia *Kademlia) NodeLookup(network Network, target string, findValue b
 	fmt.Printf("SHORTLIST, findClosestContact, nodeLookup: " + printContacts(shortList) + "\n")
 
 	// TODO: Parallel?
-	for i := 0; i < alpha; i++ {
+	for i := 0; i < len(shortList) && i < alpha; i++ {
 		var contact = shortList[i]
 		if findValue {
 			shortList, probed, value = kademlia.sendFindValueRPCs(network, &contact, target, shortList, probed)
@@ -52,7 +52,7 @@ func (kademlia *Kademlia) iterativeLookup(network Network, shortList []Contact, 
 		fmt.Printf("Running IterativeLookup:\n")
 		firsttime=false
 		closestNode = shortList[0].ID
-		for i := 0; i < kademlia.Alpha; i++ {
+		for i := 0; i < len(shortList) && i < kademlia.Alpha; i++ {
 			var contact = shortList[i]
 			if findValue {
 				shortList, probed, value = kademlia.sendFindValueRPCs(network, &contact, target, shortList, probed)
@@ -68,7 +68,7 @@ func (kademlia *Kademlia) iterativeLookup(network Network, shortList []Contact, 
 	}
 	// if more than k nodes has been successfully probed, send RPCs to k closest (not yet probed)
 	if len(probed) >= kademlia.K {
-		for i := 0; i < kademlia.K && i < len(shortList); i++ {
+		for i := 0; i < len(shortList) &&  i < kademlia.K && i < len(shortList); i++ {
 			var contact = shortList[i]
 			if findValue {
 				shortList, probed, value = kademlia.sendFindValueRPCs(network, &contact, target, shortList, probed)

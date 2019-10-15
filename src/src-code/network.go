@@ -61,6 +61,7 @@ func (network *Network) Listen(address string) {
 }
 
 func sendData(destination string, dataToSend []byte, header []byte) {
+	fmt.Printf("DataToSend: " + string(dataToSend) + "\n")
 	udpAddr, err := net.ResolveUDPAddr("udp4", destination)
 
 	if err != nil {
@@ -105,6 +106,7 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 	header := message[:3] //parse the header
 	fmt.Print(header)
 	fmt.Print("\n")
+	fmt.Printf("handleConnection, message: " + string(message) + "\n")
 	switch {
 		//Ping
 		case bytes.Equal(header, pingReqHead):
