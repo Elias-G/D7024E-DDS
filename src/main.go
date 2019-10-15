@@ -76,6 +76,7 @@ func main() {
 
 		network.NetworkJoin(*kademlia, rootNode)
 
+		fmt.Printf("I WILL LISTEN TO YOU!! :)")
 
 		src.Clilisten(network, *kademlia, port)
 	} else {

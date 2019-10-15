@@ -5,6 +5,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"log"
 	kademliaProto "proto"
+	"time"
 )
 
 /*
@@ -14,25 +15,49 @@ func PingRPC(network Network, destination string, sender Contact) string {
 	rpcID := NewRandomKademliaID().String()
 	network.PingChannels[rpcID] = make(chan kademliaProto.PingResponse) //store a ping channel in the ping channels hash map with the rpcId as key
 	SendPingRequest(destination, sender, rpcID) //send a ping request and store the rpcID
-	response := <- network.PingChannels[rpcID] //wait for response from the ping channel
-	responseBack := "Ping RpcID: " + response.GetRpcID() + " with Response: " + response.GetResponse() + " from sender: " + response.GetSender().Address + "\n" //format response //todo: should this be displayed to user?
-	return responseBack
+	loop:
+	for {
+		select {
+		case response := <- network.PingChannels[rpcID]: //wait for response from the ping channel
+			responseBack := "Ping RpcID: " + response.GetRpcID() + " with Response: " + response.GetResponse() + " from sender: " + response.GetSender().Address + "\n" //format response //todo: should this be displayed to user?
+			return responseBack
+		case <-time.After(time.Second * 10):
+			break loop
+		}
+	}
+	return "timeout. no activities under 10 seconds"
 }
 
 func FindNodeRPC(network Network, destination string, targetID string, sender Contact) []Contact {
 	rpcID := NewRandomKademliaID().String()
 	network.FindNodeChannels[rpcID] = make(chan kademliaProto.FindNodeResponse) //store a FindNode channel in the FindNode channels hash map with the rpcId as key
 	SendFindNodeRequest(destination, targetID, sender, rpcID) //send a FindNode request and store the rpcID
-	response := <- network.FindNodeChannels[rpcID] //wait for response from the FindNOde channel
-	return formatContactsForRead(response.Contacts) //Return the contacts
+	loop:
+	for {
+		select {
+		case response := <- network.FindNodeChannels[rpcID]: //wait for response from the FindNOde channel
+			return formatContactsForRead(response.Contacts) //Return the contacts
+		case <-time.After(time.Second * 10):
+			break loop
+		}
+	}
+	return []Contact{}
 }
 
 func FindValueRPC(network Network, destination string, targetID string, sender Contact) ([]byte, []Contact) {
 	rpcID := NewRandomKademliaID().String()
 	network.FindValueChannels[rpcID] = make(chan kademliaProto.FindValueResponse) //store a FindValue channel in the FindValue channels hash map with the rpcId as key
 	SendFindValueRequest(destination, targetID, sender, rpcID) //send a FindValue request and store the rpcID
-	response := <- network.FindValueChannels[rpcID] //wait for response from the FindNode channel
-	return response.GetValue(), formatContactsForRead(response.GetContacts())
+	loop:
+	for {
+		select {
+		case response := <- network.FindValueChannels[rpcID]: //wait for response from the FindNode channel
+			return response.GetValue(), formatContactsForRead(response.GetContacts())
+		case <-time.After(time.Second * 10):
+			break loop
+		}
+	}
+	return nil, []Contact{}
 }
 
 func StoreRPC(network Network, destination string, sender Contact, data []byte) string {
@@ -40,8 +65,16 @@ func StoreRPC(network Network, destination string, sender Contact, data []byte) 
 	fmt.Printf("Make channel in store " + rpcID + "\n" )
 	network.StoreChannels[rpcID] = make(chan kademliaProto.StoreResponse) //store a Store channel in the Store channels hash map with the rpcId as key
 	SendStoreRequest(destination, sender, data, rpcID) //send a Store request and store the rpcID
-	response := <- network.StoreChannels[rpcID] //wait for response from the Store channel
-	return response.Hash //return the hash
+	loop:
+	for {
+		select {
+		case response := <- network.StoreChannels[rpcID]: //wait for response from the Store channel
+			return response.Hash //return the hash
+		case <-time.After(time.Second * 10):
+			break loop
+		}
+	}
+	return "timeout. no activities under 10 seconds"
 }
 
 

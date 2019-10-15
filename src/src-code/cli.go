@@ -75,6 +75,15 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) string {
 		}
 	case "ip":
 		answer = kademlia.Me.Address
+	case "storerpc":
+		if len(input)>2 {
+			value := []byte(input[1])
+			destination := input[2] + ":" + strconv.Itoa(port)
+			hash := StoreRPC(kadnet, destination, kademlia.Me, value)
+			answer = hash
+		} else {
+			answer = "StoreRPC should be like this: storerpc [value] [ip]"
+		}
 	default:
 		answer = "Unknown command " + input[0] + ", try again"
 	}
