@@ -32,15 +32,15 @@ func main() {
 		var me = src.CreateNode(5000, ip, rootId)
 		me.CalcDistance(me.ID)
 		log.Printf("IP: " + ip + " kademlia id: " + me.ID.String())
-		var table = src.NewRoutingTable(me)
+		var table = src.NewRoutingTable(me, k)
 
 		var kademlia = &src.Kademlia{
-			RoutingTable:     *table,
-			Me:        me,
-			K:         k,
-			Alpha:     alpha,
-			HashTable: hashTable,
-			PingWait:  20000000000,
+			RoutingTable: *table,
+			Me:           me,
+			K:            k,
+			Alpha:        alpha,
+			HashTable:    hashTable,
+			PingWait:     20000000000,
 		}
 
 		network := *src.NewNetwork(*kademlia)
@@ -58,16 +58,15 @@ func main() {
 		me.CalcDistance(me.ID)
 		rootNode.CalcDistance(me.ID)
 
-
 		log.Printf("IP: " + ip + " kademlia id: " + me.ID.String())
-		table := src.NewRoutingTable(me)
+		table := src.NewRoutingTable(me, k)
 
 		var kademlia = &src.Kademlia{
-			RoutingTable:     *table,
-			Me:        me,
-			K:         k,
-			Alpha:     alpha,
-			HashTable: hashTable,
+			RoutingTable: *table,
+			Me:           me,
+			K:            k,
+			Alpha:        alpha,
+			HashTable:    hashTable,
 		}
 
 		network := *src.NewNetwork(*kademlia)

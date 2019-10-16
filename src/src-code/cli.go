@@ -28,23 +28,35 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) string {
 	answer := ""
 	switch input[0] {
 	case "h":
-		answer = "Ping should be like this: ping [ip address]\nPut should be like this: put [value]\nGet should be like this: get [hash]\nType exit to exit the node."
-	case "ping":
-		if len(input)>1 {
+		answer = "Ping should be like this: pingip [ip address]\nPut should be like this: put [value]\nGet should be like this: get [hash]\nType exit to exit the node."
+	case "pingip":
+		if len(input) > 1 {
 			dest := input[1] + ":" + strconv.Itoa(port)
-			(*Kademlia).Ping(&kademlia, kadnet, dest, kademlia.Me)
+			(*Kademlia).PingIp(&kademlia, kadnet, dest, kademlia.Me)
+		} else {
+			answer = "Ping should be like this: ping [ip address]"
+		}
+
+	case "pingcontact":
+		if len(input) > 1 {
+			idstr := input[1]
+			ip := input[2] + ":" + strconv.Itoa(port)
+			fmt.Print("This is the ID: " + idstr)
+			id := NewKademliaID(idstr)
+			contact := NewContact(id, ip)
+			(*Kademlia).Ping(&kademlia, kadnet, contact, kademlia.Me)
 		} else {
 			answer = "Ping should be like this: ping [ip address]"
 		}
 	case "put":
-		if len(input)>1 {
+		if len(input) > 1 {
 			value := []byte(input[1])
 			(*Kademlia).PutCommand(&kademlia, kadnet, value)
 		} else {
 			answer = "Put should be like this: put [value]"
 		}
 	case "get":
-		if len(input)>1 {
+		if len(input) > 1 {
 			hash := input[1]
 			fmt.Printf("Send hash with lenght " + strconv.Itoa(len(hash)) + "\n")
 			if len(hash) < 40 {
@@ -62,12 +74,12 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) string {
 	case "routingtable":
 		var contacts = kademlia.RoutingTable.FindClosestContacts(kademlia.Me.ID, 20)
 		for _, contact := range contacts {
-			answer += "Address: " + contact.Address + "\n>"
+			answer += "ID: " + contact.ID.String() + "Address: " + contact.Address + "\n>"
 		}
 	case "hashtable":
 		answer = printHashTable(kademlia.HashTable)
 	case "store":
-		if len(input)>1 {
+		if len(input) > 1 {
 			value := []byte(input[1])
 			answer = (*Kademlia).Store(&kademlia, value)
 		} else {
@@ -76,7 +88,7 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) string {
 	case "ip":
 		answer = kademlia.Me.Address
 	case "storerpc":
-		if len(input)>2 {
+		if len(input) > 2 {
 			value := []byte(input[1])
 			destination := input[2] + ":" + strconv.Itoa(port)
 			hash := StoreRPC(kadnet, destination, kademlia.Me, value)
@@ -97,4 +109,3 @@ func printHashTable(hashtable map[string][]byte) string {
 	}
 	return answ
 }
-
