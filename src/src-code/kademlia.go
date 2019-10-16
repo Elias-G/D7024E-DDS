@@ -30,12 +30,12 @@ func (kademlia *Kademlia) PutCommand(network Network, value []byte) {
 	for _, node := range nodes {
 		StoreRPC(network, node.Address, kademlia.Me, value)
 	}
-	fmt.Printf(hash + "\n")
+	fmt.Printf(hash)
 }
 
 func (kademlia *Kademlia) GetCommand(network Network, hash string) {
 	value := kademlia.findValue(network, hash)
-	fmt.Printf(value + "\n")
+	fmt.Printf(value)
 }
 
 func (kademlia *Kademlia) ExitCommand() {
@@ -87,7 +87,7 @@ func (kademlia *Kademlia) PingIp(network Network, destination string, sender Con
 		fmt.Printf("Pong")
 		return true
 	} else {
-		fmt.Printf("Could not ping node \n")
+		fmt.Printf("Could not ping node")
 		return false
 	}
 }
@@ -99,7 +99,7 @@ func (kademlia *Kademlia) Ping(network Network, destination Contact, sender Cont
 		fmt.Printf("Pong")
 	} else {
 		network.Node.RoutingTable.RemoveContact(destination)
-		fmt.Printf("Could not ping node \n")
+		fmt.Printf("Could not ping node")
 		return
 	}
 }

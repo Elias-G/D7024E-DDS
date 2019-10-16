@@ -12,12 +12,12 @@ import (
 func Clilisten(kadnet Network, kademlia Kademlia, port int) {
 	cmd := ""
 	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Print(">")
 	for scanner.Scan() {
 		cmd = scanner.Text()
 		words := strings.Fields(cmd)
 		answer := parse(words, kadnet, kademlia, port)
-		fmt.Print("> " + answer + "\n")
-		fmt.Printf(">")
+		fmt.Print(answer + "\n>")
 	}
 	if scanner.Err() != nil {
 		log.Fatal(scanner.Err())
@@ -61,7 +61,7 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) string {
 	case "routingtable":
 		var contacts = kademlia.RoutingTable.FindClosestContacts(kademlia.Me.ID, 20)
 		for _, contact := range contacts {
-			answer += "ID: " + contact.ID.String() + " Address: " + contact.Address + "\n>"
+			answer += "ID: " + contact.ID.String() + " Address: " + contact.Address + "\n"
 		}
 	case "hashtable":
 		answer = printHashTable(kademlia.HashTable)
