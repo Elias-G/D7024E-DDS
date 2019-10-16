@@ -108,3 +108,18 @@ func TestBucket_getHead(t *testing.T) {
 		t.Errorf("KademliaID_Equals(id) = %v, want %v", got, want)
 	}
 }
+
+// Test that no duplicates are added to bucket
+func TestBucket_AddContact(t *testing.T) {
+	bucket := newBucket()
+	contact1 := NewContact(NewKademliaID("1111111100000000000000000000000000000001"), "localhost:8001")
+	contact2 := NewContact(NewKademliaID("1111111100000000000000000000000000000002"), "localhost:8002")
+	bucket.AddContact(contact1)
+	bucket.AddContact(contact2)
+	len1 := bucketSize
+	bucket.AddContact(contact1)
+	len2 := bucketSize
+	if len1 != len2 {
+		t.Errorf("AddContact: Two contacts with same ID should not be added to bucket")
+	}
+}

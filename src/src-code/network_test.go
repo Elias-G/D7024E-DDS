@@ -56,3 +56,54 @@ func Test_NewNetwork(t *testing.T) {
 		t.Errorf("NewNetwork: did not return *Network")
 	}
 }
+
+func Test_AddContact(t *testing.T) {
+	net := Network{
+		Node:              node,
+		PingChannels:      nil,
+		FindNodeChannels:  nil,
+		FindValueChannels: nil,
+		StoreChannels:     nil,
+	}
+	contact := GenerateContacts(1, NewRandomKademliaID())[0]
+	addNew := net.addContact(contact)
+	if addNew != true {
+		t.Errorf("Add new contact failed")
+	}
+	self := Contact{
+		ID:       node.Me.ID,
+		Address:  node.Me.Address,
+		Distance: node.Me.Distance,
+	}
+	addSelf := net.addContact(self)
+	if addSelf != true {
+		t.Errorf("Should not be able to add self")
+	}
+}
+
+func TestRoutingTable_UpdateRoutingTableWithoutMe(t *testing.T) {
+	net := Network{
+		Node:              node,
+		PingChannels:      nil,
+		FindNodeChannels:  nil,
+		FindValueChannels: nil,
+		StoreChannels:     nil,
+	}
+	contact := GenerateContacts(1, NewRandomKademliaID())[0]
+	rtBefore := net.Node.RoutingTable.String()
+	net.updateRoutingTableWithoutMe(contact)
+	rtAfter := net.Node.RoutingTable.String()
+	if rtBefore == rtAfter {
+		t.Errorf("Update routingtable failed")
+	}
+	self := Contact{
+		ID:       node.Me.ID,
+		Address:  node.Me.Address,
+		Distance: node.Me.Distance,
+	}
+	net.updateRoutingTableWithoutMe(self)
+	rtSelf := net.Node.RoutingTable.String()
+	if rtSelf != rtAfter {
+		t.Errorf("Should not add self to routingtable")
+	}
+}
