@@ -1,6 +1,9 @@
 package src
 
-const bucketSize = 20
+import "fmt"
+import "strconv"
+
+var bucketSize int
 
 // RoutingTable definition
 // keeps a refrence contact of me and an array of buckets
@@ -10,18 +13,19 @@ type RoutingTable struct {
 }
 
 // NewRoutingTable returns a new instance of a RoutingTable
-func NewRoutingTable(me Contact) *RoutingTable {
+func NewRoutingTable(me Contact, k int) *RoutingTable {
 	routingTable := &RoutingTable{}
 	for i := 0; i < IDLength*8; i++ {
 		routingTable.buckets[i] = newBucket()
 	}
 	routingTable.me = me
+	bucketSize = k
 	return routingTable
 }
 
-func (routingTable *RoutingTable)UpdateRoutingTable(sender Contact) bool{
+func (routingTable *RoutingTable) UpdateRoutingTable(sender Contact) bool {
 	success := routingTable.AddContact(sender)
-	if(success){
+	if success {
 		return true
 	}
 	return false
@@ -31,8 +35,9 @@ func (routingTable *RoutingTable)UpdateRoutingTable(sender Contact) bool{
 // AddContact add a new contact to the correct Bucket
 func (routingTable *RoutingTable) AddContact(contact Contact) bool {
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
+	fmt.Print("BucketIndex that contact is added to: " + strconv.Itoa(bucketIndex))
 	bucket := routingTable.buckets[bucketIndex]
-	if(!bucket.full()){
+	if !bucket.full() {
 		bucket.AddContact(contact)
 		return true
 	}
@@ -42,10 +47,15 @@ func (routingTable *RoutingTable) AddContact(contact Contact) bool {
 // RemoveContact remove a contact from the correct Bucket
 func (routingTable *RoutingTable) RemoveContact(contact Contact) {
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
+	//fmt.Print("BucketIndex that contact is to be removed from: " + strconv.Itoa(bucketIndex))
 	bucket := routingTable.buckets[bucketIndex]
+	//fmt.Print("Contact to remove: " + contact.String() + "\n")
+	//fmt.Print("Bucket before remove: " + bucket.String() + "\n")
+	//fmt.Print("Routingtable before Remove: " + routingTable.String() + "\n")
 	bucket.RemoveContact(contact)
+	//fmt.Print("Bucket after remove: " + bucket.String() + "\n")
+	//fmt.Print("Routingtable after Remove: " + routingTable.String() + "\n")
 }
-
 
 // FindClosestContacts finds the count closest Contacts to the target in the RoutingTable
 func (routingTable *RoutingTable) FindClosestContacts(target *KademliaID, count int) []Contact {
@@ -87,4 +97,13 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 	}
 
 	return IDLength*8 - 1
+}
+
+func (routingTable *RoutingTable) String() string {
+	contacts := routingTable.FindClosestContacts(routingTable.me.ID, 20)
+	answer := ""
+	for _, contact := range contacts {
+		answer += "Address: " + contact.Address + "\n>"
+	}
+	return answer
 }

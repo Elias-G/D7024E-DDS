@@ -21,12 +21,14 @@ func newBucket() *bucket {
 func (bucket *bucket) RemoveContact(contact Contact) {
 	for e := bucket.list.Front(); e != nil; e = e.Next() {
 		bucketContactID := e.Value.(Contact).ID
-		if contact.ID == bucketContactID{
+		//fmt.Print("Contact to remove: " + contact.ID.String() + "\n")
+		//fmt.Print("Current contact: " + bucketContactID.String() + "\n")
+		if contact.ID.String() == bucketContactID.String() {
+			//fmt.Print("Removing contact: " + bucketContactID.String() + "\n")
 			bucket.list.Remove(e)
 		}
 	}
 }
-
 
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
@@ -79,17 +81,22 @@ func (bucket *bucket) Len() int {
 	return bucket.list.Len()
 }
 
+func (bucket *bucket) getHead() (head Contact) {
+	e := bucket.list.Front()
+	contact := e.Value.(Contact)
+	return contact
+}
 
 func (bucket *bucket) full() bool {
 	return bucket.list.Len() == bucketSize
 }
 
-func (bucket *bucket)String()string{
+func (bucket *bucket) String() string {
 	list := "[ \n"
 	contacts := bucket.GetContacts()
-	for i :=0 ; i<len(contacts); i++{
+	for i := 0; i < len(contacts); i++ {
 		contact := contacts[i]
-		list += contact.String()+ "\n"
+		list += contact.String() + "\n"
 	}
 	list += " ] "
 	return list
