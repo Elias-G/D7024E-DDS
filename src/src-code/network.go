@@ -2,7 +2,7 @@ package src
 
 import (
 	"bytes"
-	"fmt"
+	//"fmt"
 	"log"
 	"net"
 	kademliaProto "proto"
@@ -42,8 +42,6 @@ func NewNetwork(node Kademlia) *Network {
 func (network *Network) Listen(address string) {
 	udpAddr, err := net.ResolveUDPAddr("udp4", address)
 
-	fmt.Print(udpAddr)
-
 	if err != nil {
 		log.Printf(err.Error())
 		return
@@ -61,10 +59,6 @@ func (network *Network) Listen(address string) {
 }
 
 func sendData(destination string, dataToSend []byte, header []byte) {
-	/*fmt.Printf("DataToSend: ")
-	fmt.Print(dataToSend)
-	fmt.Printf("\n")*/
-	fmt.Printf("Destination, datatosend: " + destination + "\n")
 	udpAddr, err := net.ResolveUDPAddr("udp4", destination)
 
 	if err != nil {
@@ -86,17 +80,14 @@ func sendData(destination string, dataToSend []byte, header []byte) {
 }
 
 func (network *Network) NetworkJoin(node Kademlia, rootNode Contact) {
-	//var alpha = node.Alpha
 	rootNode.CalcDistance(node.Me.ID)
 	network.addContact(rootNode)
 
-	//todo: Iterative find here
 	shortlist := network.Node.findNode(*network, node.Me.ID.String())
 	for _, contact := range shortlist {
 		if contact.Address != node.Me.Address {
 			success := network.addContact(contact)
 			if !success {
-				fmt.Print("\n BUCKET FULL TIME TO PING \n")
 				bucketIndex := network.Node.RoutingTable.getBucketIndex(contact.ID)
 				bucket := network.Node.RoutingTable.buckets[bucketIndex]
 				lastseen := bucket.getHead()
@@ -104,27 +95,20 @@ func (network *Network) NetworkJoin(node Kademlia, rootNode Contact) {
 			}
 		}
 	}
-	fmt.Print("This is length of shortlist: " + strconv.Itoa(len(shortlist)) + "\n")
 }
 
-func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch should contain as little code as possible, try to move functionality/logic to help functions
+func (network *Network) handleConnection(conn net.UDPConn) {
 	message := make([]byte, 8192)          //Buffer to store message received in
 	n, _, err := conn.ReadFromUDP(message) //read incoming messages
 	if err != nil {                        //Error handling
 		log.Fatal(err)
 	}
 	header := message[:3] //parse the header
-	fmt.Print(header)
-	fmt.Print("\n")
-	/*fmt.Printf("handleConnection, message: ")
-	fmt.Print(message)
-	fmt.Printf("\n\n")*/
 	switch {
 	//Ping
 	case bytes.Equal(header, pingReqHead):
-		pingRequest := readPingRequest(message[3:n])                                                                                                                  //read request
-		fmt.Printf("Ping Request ID: " + pingRequest.GetRpcID() + " from sender: " + pingRequest.GetSender().Address + " to: " + pingRequest.GetDestination() + "\n") //print the result todo: should this be printed?
-		data := sendPingResponse(pingRequest.RpcID, network.Node.Me)                                                                                                  //send response with rpcID from request //todo: functionality to own function
+		pingRequest := readPingRequest(message[3:n])
+		data := sendPingResponse(pingRequest.RpcID, network.Node.Me)
 		sendData(pingRequest.GetSender().Address, data, pingResHead)
 
 	case bytes.Equal(header, pingResHead):
@@ -140,13 +124,10 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 		sendData(findNodeRequest.GetSender().Address, data, findNodeResHead)
 
 	case bytes.Equal(header, findNodeResHead):
-		fmt.Printf("Find node response header switch\n")
+
 		findNodeResponse := readFindNodeResponse(message[3:n])
-		//fmt.Printf("Findnode response Request ID: " + findNodeResponse.GetRpcID() + " from sender: " + findNodeResponse.GetSender().Address + " With contacts: " + printContacts(formatContactsForRead(findNodeResponse.GetContacts())) + "\n")
 		go network.updateRoutingTableWithoutMe(formatContactForRead(findNodeResponse.GetSender()))
-		fmt.Printf("Before response find node\n")
 		network.FindNodeChannels[findNodeResponse.RpcID] <- *findNodeResponse
-		fmt.Printf("After find node response\n")
 
 	//Find Value
 	case bytes.Equal(header, findValueReqHead):
@@ -170,12 +151,9 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 		sendData(storeRequest.GetSender().Address, data, storeResHead)
 
 	case bytes.Equal(header, storeResHead):
-		fmt.Printf("Store response header switch\n")
 		storeResponse := readStoreResponse(message[3:n])
 		go network.updateRoutingTableWithoutMe(formatContactForRead(storeResponse.GetSender()))
-		fmt.Printf("Before response store, looking for " + storeResponse.RpcID + "\n")
 		network.StoreChannels[storeResponse.RpcID] <- *storeResponse
-		fmt.Printf("After store response\n")
 	}
 }
 
@@ -189,7 +167,6 @@ func (network *Network) FindNode(findNodeRequest *kademliaProto.FindNodeRequest)
 	// List of k closest contacts to the target
 	contacts := network.Node.RoutingTable.FindClosestContacts(targetID, network.Node.K)
 	contacts = dontAddRequester(contacts, formatContactForRead(findNodeRequest.GetSender())) //Don't add requester to response
-	fmt.Printf("FindNode network, contacts back: " + printContacts(contacts) + "\n")
 	return contacts
 }
 

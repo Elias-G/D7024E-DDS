@@ -1,8 +1,5 @@
 package src
 
-import "fmt"
-import "strconv"
-
 var bucketSize int
 
 // RoutingTable definition
@@ -35,7 +32,6 @@ func (routingTable *RoutingTable) UpdateRoutingTable(sender Contact) bool {
 // AddContact add a new contact to the correct Bucket
 func (routingTable *RoutingTable) AddContact(contact Contact) bool {
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
-	fmt.Print("BucketIndex that contact is added to: " + strconv.Itoa(bucketIndex))
 	bucket := routingTable.buckets[bucketIndex]
 	if !bucket.full() {
 		bucket.AddContact(contact)
@@ -47,14 +43,8 @@ func (routingTable *RoutingTable) AddContact(contact Contact) bool {
 // RemoveContact remove a contact from the correct Bucket
 func (routingTable *RoutingTable) RemoveContact(contact Contact) {
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
-	//fmt.Print("BucketIndex that contact is to be removed from: " + strconv.Itoa(bucketIndex))
 	bucket := routingTable.buckets[bucketIndex]
-	//fmt.Print("Contact to remove: " + contact.String() + "\n")
-	//fmt.Print("Bucket before remove: " + bucket.String() + "\n")
-	//fmt.Print("Routingtable before Remove: " + routingTable.String() + "\n")
 	bucket.RemoveContact(contact)
-	//fmt.Print("Bucket after remove: " + bucket.String() + "\n")
-	//fmt.Print("Routingtable after Remove: " + routingTable.String() + "\n")
 }
 
 // FindClosestContacts finds the count closest Contacts to the target in the RoutingTable

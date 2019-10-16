@@ -23,18 +23,14 @@ func (kademlia *Kademlia) PutCommand(network Network, value []byte) {
 	hash := HashValue(value)
 	nodes := kademlia.findNode(network, hash)
 
-	fmt.Printf("Nodes found: " + strconv.Itoa(len(nodes)) + "\n")
-
 	if network.Node.Me.ID.CalcDistance(NewKademliaID(hash)).Less(nodes[len(nodes)-1].ID.CalcDistance(NewKademliaID(hash))) { //If this node is closer than the last one in the returned list this node should replace that one
 		nodes[len(nodes)-1] = network.Node.Me
 	}
 
 	for _, node := range nodes {
 		StoreRPC(network, node.Address, kademlia.Me, value)
-		fmt.Printf("Sending " + string(value) + " to " + node.Address + " from " + kademlia.Me.Address + "\n")
 	}
 	fmt.Printf(hash + "\n")
-	fmt.Printf("Recieved hash with lenght " + strconv.Itoa(len(hash)) + "\n")
 }
 
 func (kademlia *Kademlia) GetCommand(network Network, hash string) {
@@ -88,10 +84,9 @@ func (kademlia *Kademlia) PingIp(network Network, destination string, sender Con
 
 	response := PingRPC(network, destination, sender)
 	if response == "true" {
-		fmt.Printf("Pong") //print the result todo: should this be printed?
+		fmt.Printf("Pong")
 		return true
 	} else {
-		//find node contact in bucket and remove it
 		fmt.Printf("Could not ping node \n")
 		return false
 	}
@@ -101,10 +96,9 @@ func (kademlia *Kademlia) Ping(network Network, destination Contact, sender Cont
 
 	response := PingRPC(network, destination.Address, sender)
 	if response == "true" {
-		fmt.Printf("Pong") //print the result todo: should this be printed?
+		fmt.Printf("Pong")
 	} else {
-		network.Node.RoutingTable.RemoveContact(destination) //todo: implement remove from bucket and make sender a contact
-		//find node contact in bucket and remove it
+		network.Node.RoutingTable.RemoveContact(destination)
 		fmt.Printf("Could not ping node \n")
 		return
 	}
