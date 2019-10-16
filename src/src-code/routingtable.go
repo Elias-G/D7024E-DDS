@@ -101,9 +101,9 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 
 func (routingTable *RoutingTable) String() string {
 	contacts := routingTable.FindClosestContacts(routingTable.me.ID, 20)
-	answer := ""
+	answer := "\n"
 	for _, contact := range contacts {
-		answer += "Address: " + contact.Address + "\n>"
+		answer += "Address: " + contact.Address + "\n"
 	}
 	return answer
 }
