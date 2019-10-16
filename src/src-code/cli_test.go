@@ -80,7 +80,7 @@ func TestParse_routingtable(t *testing.T) {
 
 	input := []string{"routingtable"}
 	got := parse(input, *network, node, 5000)
-	want := "ID: " + contacts[0].ID.String() + " Address: " + contacts[0].Address + "\n>"
+	want := "ID: " + contacts[0].ID.String() + " Address: " + contacts[0].Address + "\n"
 	if got != want {
 		t.Errorf("TestParse_routingtable = %v, want %v", got, want)
 	}
