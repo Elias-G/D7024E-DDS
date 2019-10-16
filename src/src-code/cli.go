@@ -36,18 +36,6 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) string {
 		} else {
 			answer = "Pingip should be like this: pingip [ip address]"
 		}
-
-	/*case "pingcontact":
-		if len(input) > 1 {
-			idstr := input[1]
-			ip := input[2] + ":" + strconv.Itoa(port)
-			fmt.Print("This is the ID: " + idstr)
-			id := NewKademliaID(idstr)
-			contact := NewContact(id, ip)
-			(*Kademlia).Ping(&kademlia, kadnet, contact, kademlia.Me)
-		} else {
-			answer = "Ping should be like this: ping [ip address]"
-		}*/
 	case "put":
 		if len(input) > 1 {
 			value := []byte(input[1])
@@ -58,7 +46,6 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) string {
 	case "get":
 		if len(input) > 1 {
 			hash := input[1]
-			fmt.Printf("Send hash with lenght " + strconv.Itoa(len(hash)) + "\n")
 			if len(hash) < 40 {
 				answer = "Incorrect hash, the hash must be at least 40 chars"
 			} else {

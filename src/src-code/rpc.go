@@ -1,7 +1,6 @@
 package src
 
 import (
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"log"
 	kademliaProto "proto"
@@ -23,14 +22,12 @@ loop:
 	for {
 		select {
 		case response := <-network.PingChannels[rpcID]: //wait for response from the ping channel
-			responseBack := "Ping RpcID: " + response.GetRpcID() + " with Response: " + response.GetResponse() + " from sender: " + response.GetSender().Address + "\n" //format response //todo: should this be displayed to user?
-			fmt.Print(responseBack)
+			log.Print(response)
 			return "true"
 		case <-time.After(time.Second * wait):
 			break loop
 		}
 	}
-	//return "timeout. no activities under 10 seconds"
 	return "false"
 }
 
@@ -68,7 +65,6 @@ loop:
 
 func StoreRPC(network Network, destination string, sender Contact, data []byte) string {
 	rpcID := NewRandomKademliaID().String()
-	fmt.Printf("Make channel in store " + rpcID + "\n")
 	network.StoreChannels[rpcID] = make(chan kademliaProto.StoreResponse) //store a Store channel in the Store channels hash map with the rpcId as key
 	SendStoreRequest(destination, sender, data, rpcID)                    //send a Store request and store the rpcID
 loop:
