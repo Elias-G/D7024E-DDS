@@ -108,7 +108,7 @@ func (network *Network) NetworkJoin(node Kademlia, rootNode Contact) {
 }
 
 func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch should contain as little code as possible, try to move functionality/logic to help functions
-	message := make([]byte, 1024)          //Buffer to store message received in
+	message := make([]byte, 8192)          //Buffer to store message received in
 	n, _, err := conn.ReadFromUDP(message) //read incoming messages
 	if err != nil {                        //Error handling
 		log.Fatal(err)
