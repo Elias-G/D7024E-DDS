@@ -134,28 +134,3 @@ func TestParse_hashtable(t *testing.T) {
 		t.Errorf("TestParse_hashtable = %v, want %v", got, want)
 	}
 }
-
-/*func TestParse_storerpc(t *testing.T){
-	node.HashTable = InitTable()
-	value := []byte("piggy")
-
-	input := []string{"storerpc", string(value), "0.0.0.0:5000"}
-	got := parse(input, *network, node, 5000)
-	want := "timeout. no activities under 10 seconds\n"
-
-	if got != want {
-		t.Errorf("TestParse_store = %v, want %v", got, want)
-	}
-
-	input = []string{"storerpc"}
-	got = parse(input, *network, node, 5000)
-	want = "StoreRPC should be like this: storerpc [value] [ip]"
-
-	if got != want {
-		t.Errorf("TestParse_store = %v, want %v", got, want)
-	}
-}*/
-
-func TestClilisten(t *testing.T) {
-	Clilisten(*network, node, 5000)
-}
