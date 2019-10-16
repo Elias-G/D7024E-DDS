@@ -19,9 +19,9 @@ func Test_sendPingResponse(t *testing.T) {
 	}
 }
 
-func GenerateContacts(nrOfContacts int, id *KademliaID)(contacts []Contact) {
+func GenerateContacts(nrOfContacts int, id *KademliaID) (contacts []Contact) {
 	for i := 0; i < nrOfContacts; i++ {
-		contact := NewContact(NewRandomKademliaID(), "Address" + string(i))
+		contact := NewContact(NewRandomKademliaID(), "0.0.0.0:5000")
 		contact.CalcDistance(id)
 		contacts = append(contacts, contact)
 	}
@@ -47,7 +47,7 @@ func Test_sendFindValueResponse(t *testing.T) {
 	rpcID := contactID.String()
 	sender := GenerateContacts(1, contactID)[0]
 	contacts := GenerateContacts(10, contactID)
-	value,_ := hex.DecodeString(rpcID)
+	value, _ := hex.DecodeString(rpcID)
 
 	var i interface{} = sendFindValueResponse(rpcID, sender, value, contacts)
 
@@ -72,7 +72,7 @@ func Test_sendStoreResponse(t *testing.T) {
 }
 
 func Test_readPingRequest(t *testing.T) {
-	message,_ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
+	message, _ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
 
 	var i interface{} = readPingRequest(message)
 
@@ -83,7 +83,7 @@ func Test_readPingRequest(t *testing.T) {
 }
 
 func Test_readFindNodeRequest(t *testing.T) {
-	message,_ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
+	message, _ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
 
 	var i interface{} = readFindNodeRequest(message)
 
@@ -94,7 +94,7 @@ func Test_readFindNodeRequest(t *testing.T) {
 }
 
 func Test_readFindValueRequest(t *testing.T) {
-	message,_ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
+	message, _ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
 
 	var i interface{} = readFindValueRequest(message)
 
@@ -105,7 +105,7 @@ func Test_readFindValueRequest(t *testing.T) {
 }
 
 func Test_readStoreRequest(t *testing.T) {
-	message,_ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
+	message, _ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
 
 	var i interface{} = readStoreRequest(message)
 
@@ -116,7 +116,7 @@ func Test_readStoreRequest(t *testing.T) {
 }
 
 func Test_readPingResponse(t *testing.T) {
-	message,_ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
+	message, _ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
 
 	var i interface{} = readPingResponse(message)
 
@@ -127,7 +127,7 @@ func Test_readPingResponse(t *testing.T) {
 }
 
 func Test_readFindNodeResponse(t *testing.T) {
-	message,_ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
+	message, _ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
 
 	var i interface{} = readFindNodeResponse(message)
 
@@ -138,7 +138,7 @@ func Test_readFindNodeResponse(t *testing.T) {
 }
 
 func Test_readFindValueResponse(t *testing.T) {
-	message,_ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
+	message, _ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
 
 	var i interface{} = readFindValueResponse(message)
 
@@ -149,7 +149,7 @@ func Test_readFindValueResponse(t *testing.T) {
 }
 
 func Test_readStoreResponse(t *testing.T) {
-	message,_ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
+	message, _ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
 
 	var i interface{} = readStoreResponse(message)
 
@@ -174,7 +174,7 @@ func Test_formatContactsForRead(t *testing.T) {
 
 func Test_formatContactForRead(t *testing.T) {
 	contact := generateContactsForReading(1, NewRandomKademliaID())[0]
-	var i interface {} = formatContactForRead(contact)
+	var i interface{} = formatContactForRead(contact)
 
 	_, ok := i.(Contact)
 	if !ok {
@@ -183,10 +183,9 @@ func Test_formatContactForRead(t *testing.T) {
 }
 
 func Test_SendPingRequest(t *testing.T) {
-	destination := "Address"
 	contact := GenerateContacts(1, NewRandomKademliaID())[0]
 
-	var i interface {} = SendPingRequest(destination, contact, NewRandomKademliaID().String())
+	var i interface{} = SendPingRequest(contact.Address, contact, NewRandomKademliaID().String())
 
 	_, ok := i.(string)
 	if !ok {
@@ -195,11 +194,10 @@ func Test_SendPingRequest(t *testing.T) {
 }
 
 func Test_SendFindNodeRequest(t *testing.T) {
-	destination := "Address"
 	contact := GenerateContacts(1, NewRandomKademliaID())[0]
 	targetID := NewRandomKademliaID().String()
 
-	var i interface {} = SendFindNodeRequest(destination, targetID, contact, NewRandomKademliaID().String())
+	var i interface{} = SendFindNodeRequest(contact.Address, targetID, contact, NewRandomKademliaID().String())
 
 	_, ok := i.(string)
 	if !ok {
@@ -208,11 +206,10 @@ func Test_SendFindNodeRequest(t *testing.T) {
 }
 
 func Test_SendFindValueRequest(t *testing.T) {
-	destination := "Address"
 	contact := GenerateContacts(1, NewRandomKademliaID())[0]
 	hash := "asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer"
 
-	var i interface {} = SendFindValueRequest(destination, hash, contact, NewRandomKademliaID().String())
+	var i interface{} = SendFindValueRequest(contact.Address, hash, contact, NewRandomKademliaID().String())
 
 	_, ok := i.(string)
 	if !ok {
@@ -221,11 +218,10 @@ func Test_SendFindValueRequest(t *testing.T) {
 }
 
 func Test_SendStoreRequest(t *testing.T) {
-	destination := "Address"
 	contact := GenerateContacts(1, NewRandomKademliaID())[0]
-	data,_ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
+	data, _ := hex.DecodeString("asdfghjklzxcvbnmqwerasdfghjklzxcvbnmqwer")
 
-	var i interface {} = SendStoreRequest(destination, contact, data, NewRandomKademliaID().String())
+	var i interface{} = SendStoreRequest(contact.Address, contact, data, NewRandomKademliaID().String())
 
 	_, ok := i.(string)
 	if !ok {
@@ -233,13 +229,12 @@ func Test_SendStoreRequest(t *testing.T) {
 	}
 }
 
-func generateContactsForReading(nrOfContacts int, id *KademliaID)(contacts []*kademliaProto.Contact) {
+func generateContactsForReading(nrOfContacts int, id *KademliaID) (contacts []*kademliaProto.Contact) {
 	for i := 0; i < nrOfContacts; i++ {
-		contact := NewContact(NewRandomKademliaID(), "Address" + string(i))
+		contact := NewContact(NewRandomKademliaID(), "Address"+string(i))
 		contact.CalcDistance(id)
-		newContact := &kademliaProto.Contact{NodeId: contact.ID.String(), Address:contact.Address, Distance:contact.Distance.String()}
+		newContact := &kademliaProto.Contact{NodeId: contact.ID.String(), Address: contact.Address, Distance: contact.Distance.String()}
 		contacts = append(contacts, newContact)
 	}
 	return contacts
 }
-

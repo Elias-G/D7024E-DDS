@@ -81,6 +81,7 @@ func (bucket *bucket) Len() int {
 	return bucket.list.Len()
 }
 
+//Returns the head in the list, the latest inserted contact
 func (bucket *bucket) getHead() (head Contact) {
 	e := bucket.list.Front()
 	contact := e.Value.(Contact)
