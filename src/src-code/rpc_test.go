@@ -3,6 +3,7 @@ package src
 import (
 	"encoding/hex"
 	kademliaProto "proto"
+	"strconv"
 	"testing"
 )
 
@@ -237,4 +238,38 @@ func generateContactsForReading(nrOfContacts int, id *KademliaID) (contacts []*k
 		contacts = append(contacts, newContact)
 	}
 	return contacts
+}
+
+func Test_FindNodeRPC_dead_node(t *testing.T) {
+	got := FindNodeRPC(*network, "0.0.0.0:5000", NewRandomKademliaID().String(), Contact{ID:NewRandomKademliaID(), Address:"0.0.0.0:5000", Distance:NewRandomKademliaID()})
+
+	if len(got)!=0 {
+		t.Errorf("Test_FindNodeRPC_dead_node: Should timeout")
+	}
+}
+
+func Test_FindValueRPC_dead_node(t *testing.T) {
+	got_value, got_contacts := FindValueRPC(*network, "0.0.0.0:5000", NewRandomKademliaID().String(), Contact{ID:NewRandomKademliaID(), Address:"0.0.0.0:5000", Distance:NewRandomKademliaID()})
+
+	if len(got_contacts)!=0 || got_value != nil {
+		t.Errorf("Test_FindValueRPC_dead_node: Should timeout")
+	}
+}
+
+func Test_StoreRPC_dead_node(t *testing.T) {
+	got := StoreRPC(*network, "0.0.0.0:5000", Contact{ID:NewRandomKademliaID(), Address:"0.0.0.0:5000", Distance:NewRandomKademliaID()}, []byte(""))
+	want := "timeout. no activities under " + strconv.Itoa(wait) + " seconds"
+
+	if got != want {
+		t.Errorf("Test_StoreRPC_dead_node= %v, want %v", got, want)
+	}
+}
+
+func Test_PingRPC_dead_node(t *testing.T) {
+	got := PingRPC(*network, "0.0.0.0:5000", Contact{ID:NewRandomKademliaID(), Address:"0.0.0.0:5000", Distance:NewRandomKademliaID()})
+	want := "false"
+
+	if got != want {
+		t.Errorf("Test_PingRPC_dead_node= %v, want %v", got, want)
+	}
 }
