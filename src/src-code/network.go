@@ -174,17 +174,8 @@ func (network *Network) handleConnection(conn net.UDPConn) { //todo: this switch
 		storeResponse := readStoreResponse(message[3:n])
 		go network.updateRoutingTableWithoutMe(formatContactForRead(storeResponse.GetSender()))
 		fmt.Printf("Before response store, looking for " + storeResponse.RpcID + "\n")
-		testChannels(network.StoreChannels, storeResponse.RpcID)
 		network.StoreChannels[storeResponse.RpcID] <- *storeResponse
 		fmt.Printf("After store response\n")
-	}
-}
-
-func testChannels(hashmap map[string]chan kademliaProto.StoreResponse, rpcId string) {
-	if hashmap[rpcId] != nil {
-		fmt.Printf("Channel not null\n")
-	} else {
-		fmt.Printf("Channel is null\n")
 	}
 }
 

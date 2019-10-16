@@ -25,7 +25,6 @@ loop:
 		case response := <-network.PingChannels[rpcID]: //wait for response from the ping channel
 			responseBack := "Ping RpcID: " + response.GetRpcID() + " with Response: " + response.GetResponse() + " from sender: " + response.GetSender().Address + "\n" //format response //todo: should this be displayed to user?
 			fmt.Print(responseBack)
-			//return responseBack
 			return "true"
 		case <-time.After(time.Second * wait):
 			break loop
