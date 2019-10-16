@@ -29,7 +29,6 @@ func (kademlia *Kademlia) PutCommand(network Network, value []byte) {
 		nodes[len(nodes)-1] = network.Node.Me
 	}
 
-
 	for _, node := range nodes {
 		StoreRPC(network, node.Address, kademlia.Me, value)
 		fmt.Printf("Sending " + string(value) + " to " + node.Address + " from " + kademlia.Me.Address + "\n")
@@ -85,59 +84,28 @@ func (kademlia *Kademlia) Find(key string) []byte {
 	return value
 }
 
-func (kademlia *Kademlia) PingIp(network Network, destination string, sender Contact) {
-	/*var found = false
-	timer := time.AfterFunc(time.Second * 5, func() {
-		if found == false { //Node is not found within the timer, could be dead
-			network.Node.RoutingTable.RemoveContact(sender)//todo: implement remove from bucket and make sender a contact
-			//find node contact in bucket and remove it
-			fmt.Printf("Could not ping node \n")
-			return
-		}
-	})*/
-
-	var found = false
-	timer := time.AfterFunc(time.Second*5, func() {
-		if found == false { //Node is not found within the timer, could be dead
-			fmt.Printf("Could not ping node \n")
-			return
-		}
-	})
+func (kademlia *Kademlia) PingIp(network Network, destination string, sender Contact) bool {
 
 	response := PingRPC(network, destination, sender)
-
-	found = true //if this code is reached a response came back and node is alive
-	timer.Stop() //then timer can be stopped
-	fmt.Print(response)
+	if response == "true" {
+		fmt.Printf("Pong") //print the result todo: should this be printed?
+		return true
+	} else {
+		//find node contact in bucket and remove it
+		fmt.Printf("Could not ping node \n")
+		return false
+	}
 }
 
 func (kademlia *Kademlia) Ping(network Network, destination Contact, sender Contact) {
-
-	/*var found = false
-	timer := time.AfterFunc(time.Second*5, func() {
-		if found == false { //Node is not found within the timer, could be dead
-			network.Node.RoutingTable.RemoveContact(destination) //todo: implement remove from bucket and make sender a contact
-			network.Node.RoutingTable.RemoveContact(sender)      //todo: implement remove from bucket and make sender a contact
-			//find node contact in bucket and remove it
-			fmt.Printf("Could not ping node \n")
-			return
-		}
-	})*/
 
 	response := PingRPC(network, destination.Address, sender)
 	if response == "true" {
 		fmt.Printf("Pong") //print the result todo: should this be printed?
 	} else {
 		network.Node.RoutingTable.RemoveContact(destination) //todo: implement remove from bucket and make sender a contact
-		network.Node.RoutingTable.RemoveContact(sender)      //todo: implement remove from bucket and make sender a contact
 		//find node contact in bucket and remove it
 		fmt.Printf("Could not ping node \n")
 		return
 	}
-
-	//found = true //if this code is reached a response came back and node is alive
-	//timer.Stop() //then timer can be stopped
-
-	//fmt.Printf(response) //print the result todo: should this be printed?
-	//network.Node.RoutingTable.AddContact(sender) //todo: make sender to contact, to add to front of bucket
 }

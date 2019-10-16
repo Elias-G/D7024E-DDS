@@ -5,12 +5,16 @@ import (
 	"github.com/golang/protobuf/proto"
 	"log"
 	kademliaProto "proto"
+	"strconv"
 	"time"
 )
 
 /*
 RPC methods for Ping, Find node, Find Value and Store
 */
+
+const wait = 2
+
 func PingRPC(network Network, destination string, sender Contact) string {
 	rpcID := NewRandomKademliaID().String()
 	network.PingChannels[rpcID] = make(chan kademliaProto.PingResponse) //store a ping channel in the ping channels hash map with the rpcId as key
@@ -23,7 +27,7 @@ loop:
 			fmt.Print(responseBack)
 			//return responseBack
 			return "true"
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * wait):
 			break loop
 		}
 	}
@@ -40,7 +44,7 @@ loop:
 		select {
 		case response := <-network.FindNodeChannels[rpcID]: //wait for response from the FindNOde channel
 			return formatContactsForRead(response.Contacts) //Return the contacts
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * wait):
 			break loop
 		}
 	}
@@ -56,7 +60,7 @@ loop:
 		select {
 		case response := <-network.FindValueChannels[rpcID]: //wait for response from the FindNode channel
 			return response.GetValue(), formatContactsForRead(response.GetContacts())
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * wait):
 			break loop
 		}
 	}
@@ -73,11 +77,11 @@ loop:
 		select {
 		case response := <-network.StoreChannels[rpcID]: //wait for response from the Store channel
 			return response.Hash //return the hash
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * wait):
 			break loop
 		}
 	}
-	return "timeout. no activities under 10 seconds"
+	return "timeout. no activities under " + strconv.Itoa(wait) + " seconds"
 }
 
 /*

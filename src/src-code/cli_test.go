@@ -4,27 +4,27 @@ import "testing"
 
 var network = NewNetwork(node)
 
-func TestParse_h(t *testing.T){
+func TestParse_h(t *testing.T) {
 	input := []string{"h"}
 	got := parse(input, *network, node, 5000)
 
-	want := "Ping should be like this: ping [ip address]\nPut should be like this: put [value]\nGet should be like this: get [hash]\nType exit to exit the node."
+	want := "Ping should be like this: pingip [ip address]\nPut should be like this: put [value]\nGet should be like this: get [hash]\nType exit to exit the node."
 	if got != want {
 		t.Errorf("TestParse_h = %v, want %v", got, want)
 	}
 }
 
-func TestParse_ping(t *testing.T){
-	input := []string{"ping"}
+func TestParse_ping(t *testing.T) {
+	input := []string{"pingip"}
 	got := parse(input, *network, node, 5000)
 
-	want := "Ping should be like this: ping [ip address]"
+	want := "Pingip should be like this: pingip [ip address]"
 	if got != want {
-		t.Errorf("TestParse_ping = %v, want %v", got, want)
+		t.Errorf("TestParse_pingip = %v, want %v", got, want)
 	}
 }
 
-func TestParse_put(t *testing.T){
+func TestParse_put(t *testing.T) {
 	input := []string{"put"}
 	got := parse(input, *network, node, 5000)
 
@@ -34,7 +34,7 @@ func TestParse_put(t *testing.T){
 	}
 }
 
-func TestParse_get(t *testing.T){
+func TestParse_get(t *testing.T) {
 	input := []string{"get"}
 	got := parse(input, *network, node, 5000)
 	want := "Get should be like this: get [hash]"
@@ -52,7 +52,7 @@ func TestParse_get(t *testing.T){
 	}
 }
 
-func TestParse_ip(t *testing.T){
+func TestParse_ip(t *testing.T) {
 	input := []string{"ip"}
 	got := parse(input, *network, node, 5000)
 	want := node.Me.Address
@@ -62,7 +62,7 @@ func TestParse_ip(t *testing.T){
 	}
 }
 
-func TestParse_default(t *testing.T){
+func TestParse_default(t *testing.T) {
 	input := []string{"unknown"}
 	got := parse(input, *network, node, 5000)
 	want := "Unknown command " + input[0] + ", try again"
@@ -72,20 +72,20 @@ func TestParse_default(t *testing.T){
 	}
 }
 
-func TestParse_routingtable(t *testing.T){
+func TestParse_routingtable(t *testing.T) {
 	contacts := GenerateContacts(1, NewRandomKademliaID())
 	node.RoutingTable.AddContact(contacts[0])
 
 	input := []string{"routingtable"}
 	got := parse(input, *network, node, 5000)
-	want := "Address: " + contacts[0].Address + "\n>"
+	want := "ID: " + contacts[0].ID.String() + " Address: " + contacts[0].Address + "\n>"
 
 	if got != want {
 		t.Errorf("TestParse_routingtable = %v, want %v", got, want)
 	}
 }
 
-func TestParse_store(t *testing.T){
+func TestParse_store(t *testing.T) {
 	node.HashTable = InitTable()
 	value := []byte("piggy")
 	hash := HashValue(value)
@@ -119,7 +119,7 @@ func TestPrintHashTable(t *testing.T) {
 	}
 }
 
-func TestParse_hashtable(t *testing.T){
+func TestParse_hashtable(t *testing.T) {
 	node.HashTable = InitTable()
 	key := "test"
 	value := []byte("123")
@@ -155,7 +155,6 @@ func TestParse_hashtable(t *testing.T){
 	}
 }*/
 
-func TestClilisten(t *testing.T){
+func TestClilisten(t *testing.T) {
 	Clilisten(*network, node, 5000)
 }
-

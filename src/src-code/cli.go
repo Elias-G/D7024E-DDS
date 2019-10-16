@@ -34,7 +34,7 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) string {
 			dest := input[1] + ":" + strconv.Itoa(port)
 			(*Kademlia).PingIp(&kademlia, kadnet, dest, kademlia.Me)
 		} else {
-			answer = "Ping should be like this: ping [ip address]"
+			answer = "Pingip should be like this: pingip [ip address]"
 		}
 
 	case "pingcontact":
@@ -74,7 +74,7 @@ func parse(input []string, kadnet Network, kademlia Kademlia, port int) string {
 	case "routingtable":
 		var contacts = kademlia.RoutingTable.FindClosestContacts(kademlia.Me.ID, 20)
 		for _, contact := range contacts {
-			answer += "ID: " + contact.ID.String() + "Address: " + contact.Address + "\n>"
+			answer += "ID: " + contact.ID.String() + " Address: " + contact.Address + "\n>"
 		}
 	case "hashtable":
 		answer = printHashTable(kademlia.HashTable)
